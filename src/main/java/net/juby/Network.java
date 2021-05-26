@@ -5,14 +5,12 @@ import org.apache.commons.math3.linear.*;
 public class Network {
     private int[] layerSizes;
     private int numberOfLayers;
-
     //biases[i].getEntry(j) returns the bias on the (j+1)th neuron
     //  in the (i+1)th layer
     //
     //example: biases[0].getEntry(1) returns the bias on the 2nd
     //  neuron in the 1st layer
     private RealVector[] biases;
-
     //weights[i].getEntry(j, k) gives the weights for the connection
     //  between the (k+1)th neuron in the (i+1)th layer and the
     //  (j+1)th neuron in the (i+2)th layer.
