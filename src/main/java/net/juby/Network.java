@@ -1,6 +1,7 @@
 package net.juby;
 
 import org.apache.commons.math3.linear.*;
+import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
 
 public class Network {
     private int[] layerSizes; //array of the number of neurons in each layer
@@ -63,5 +64,62 @@ public class Network {
 
         //After all layers have been processed, ret contains the output layer.
         return ret;
+    }
+
+    public void stochasticGradientDescent(RealMatrix trainingData,
+                                          int epochs,
+                                          int miniBatchSize,
+                                          double eta){
+        stochasticGradientDescent(trainingData, epochs, miniBatchSize, eta, null);
+    }
+
+    public void stochasticGradientDescent(RealMatrix trainingData,
+                                          int epochs,
+                                          int miniBatchSize,
+                                          double eta,
+                                          RealMatrix testData){
+        //Local variable setup.
+        int nTest = -1;
+        int miniBatchCount = trainingData.getRowDimension()/miniBatchSize;
+        RealMatrix[] miniBatches = new RealMatrix[miniBatchCount];
+        if(testData != null) nTest = testData.getRowDimension();
+        int n = trainingData.getRowDimension();
+        double[][] temp = new double[miniBatchSize][trainingData.getColumnDimension()];
+
+        //Run this loop for each epoch.
+        for(int i = 0; i < epochs; i++) {
+            trainingData = EMatrixUtils.shuffleRows(trainingData); //randomize the training data
+
+            //Generate the mini batches.
+            for (int j = 0; j < miniBatchCount; j++) {
+                trainingData.copySubMatrix(j * miniBatchCount,
+                        j * (miniBatchCount + 1) - 1,
+                        0,
+                        trainingData.getColumnDimension() - 1,
+                        temp);
+                miniBatches[j] = MatrixUtils.createRealMatrix(temp);
+            }
+
+            //Run the mini batches.
+            for (RealMatrix batch : miniBatches) {
+                updateMiniBatch(batch, eta);
+            }
+
+            //Output progress to command line.
+            if(testData != null){
+                System.out.println("Epoch " + i + ": " + evaluate(testData) + "/" + nTest);
+            } else {
+                System.out.println("Epoch " + i + " complete.");
+            }
+        }
+    }
+
+    private double evaluate(RealMatrix testData) {
+        //todo evaluate
+        return 0.0;
+    }
+
+    private void updateMiniBatch(RealMatrix batch, double eta) {
+        //todo updateMiniBatch
     }
 }
