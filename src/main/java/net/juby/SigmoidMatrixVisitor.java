@@ -4,12 +4,6 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealMatrixChangingVisitor;
 
 public class SigmoidMatrixVisitor implements RealMatrixChangingVisitor {
-    private RealMatrix m;
-
-    public SigmoidMatrixVisitor(RealMatrix m){
-        this.m = m;
-    }
-
     @Override
     public void start(int i, int i1, int i2, int i3, int i4, int i5) {
         //not used
