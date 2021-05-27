@@ -88,7 +88,8 @@ public class Network {
 
         //Run this loop for each epoch.
         for(int i = 0; i < epochs; i++) {
-            trainingData = EMatrixUtils.shuffleRows(trainingData); //randomize the training data
+            //Randomize the training data.
+            trainingData = EMatrixUtils.shuffleRows(trainingData);
 
             //Generate the mini batches.
             for (int j = 0; j < miniBatchCount; j++) {
@@ -120,6 +121,32 @@ public class Network {
     }
 
     private void updateMiniBatch(RealMatrix batch, double eta) {
+        //I'm not a fan of these variable names, but at this point in the book the backpropagation algorithm hasn't
+        //really been explained. Once I have a better understanding I'll likely rename these variables to something
+        //a bit more intuitive.
+        RealVector[] nabla_b = new RealVector[biases.length];
+        RealMatrix[] nabla_w = new RealMatrix[weights.length];
+
+        //Set up the nablas
+        for(int i = 0; i < biases.length; i++){
+            nabla_b[i] = new ArrayRealVector(biases[i].getDimension(), 0.0);
+        }
+        for(int i = 0; i < weights.length; i++){
+            int rows = weights[i].getRowDimension();
+            int cols = weights[i].getColumnDimension();
+            RealVector temp = new ArrayRealVector(rows, 0.0);
+
+            nabla_w[i] = new Array2DRowRealMatrix(rows, cols);
+
+            for(int j = 0; j < cols; j++){
+                nabla_w[i].setColumnVector(j, temp);
+            }
+        }
+
         //todo updateMiniBatch
     }
+
+    //todo backpropagation
+    //todo costderivative
+    //todo sigmoidprime - may just make this another Visitor
 }
