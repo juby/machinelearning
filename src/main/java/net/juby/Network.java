@@ -4,21 +4,26 @@ import org.apache.commons.math3.linear.*;
 import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
 
 public class Network {
-    private int[] layerSizes; //array of the number of neurons in each layer
-    private int numberOfLayers; //number of layers in the network, equivalent to layerSizes.length
+    //array of the number of neurons in each layer
+    private int[] layerSizes;
+
+    //number of layers in the network, equivalent to layerSizes.length
+    private int numberOfLayers;
+
     //biases[i].getEntry(j) returns the bias on the (j+1)th neuron
-    //  in the (i+1)th layer.
+    //    in the (i+1)th layer.
     //
     //example: biases[0].getEntry(1) returns the bias on the 2nd
     //  neuron in the 1st layer.
     private RealVector[] biases;
-    //weights[i].getEntry(j, k) gives the weights for the connection
-    //  between the (k+1)th neuron in the (i+1)th layer and the
-    //  (j+1)th neuron in the (i+2)th layer.
+
+    // weights[i].getEntry(j, k) gives the weights for the connection
+    //    between the (k+1)th neuron in the (i+1)th layer and the
+    //    (j+1)th neuron in the (i+2)th layer.
     //
-    //example: weights[1].getEntry(5, 7) returns the weight of the
-    //  connection between the 8th neuron in the 2nd layer and the
-    //  6th neuron in the 3rd layer.
+    // example: weights[1].getEntry(5, 7) returns the weight of the
+    //    connection between the 8th neuron in the 2nd layer and the
+    //    6th neuron in the 3rd layer.
     private RealMatrix[] weights;
 
     public Network(int[] layerSizes){
@@ -28,11 +33,13 @@ public class Network {
         biases = new RealVector[numberOfLayers];
         weights = new RealMatrix[numberOfLayers - 1];
 
-        //Initialize the vectors/matrices
-        //First set all of the biases in the first layer to zero. The first layer is the input layer, so no biases are
-        //  needed. By setting it to all zeros it makes our math a little easier later.
+        // Initialize the vectors/matrices
+        // First set all of the biases in the first layer to zero. The first
+        // layer is the input layer, so no biases are needed. By setting it to
+        // all zeros it makes our math a little easier later.
         for(int i = 0; i < layerSizes[0]; i++) biases[0].setEntry(i, 0.0);
-        //Then create the vectors for each layer and initialize with random values.
+
+        // Then create the vectors for each layer and initialize with random values.
         for(int i = 1; i < biases.length; i++){
             int vectorLength = layerSizes[i];
             biases[i] = new ArrayRealVector(vectorLength);
@@ -40,7 +47,7 @@ public class Network {
                 biases[i].setEntry(j, Math.random());
             }
         }
-        //Finally create the weights matrices and initialize with random values.
+        // Finally create the weights matrices and initialize with random values.
         for(int i = 0; i < weights.length; i++){
             int cols = layerSizes[i];
             int rows = layerSizes[i+1];
@@ -59,10 +66,11 @@ public class Network {
 
         //For each layer, calculate a' = σ(wa+b).
         for(int i = 0; i < numberOfLayers; i++){
-            weights[i].operate(ret).add(biases[i]).walkInOptimizedOrder(new SigmoidVectorVisitor());
+            weights[i].operate(ret).add(biases[i])
+                    .walkInOptimizedOrder(new SigmoidVectorVisitor());
         }
 
-        //After all layers have been processed, ret contains the output layer.
+        // After all layers have been processed, ret contains the output layer.
         return ret;
     }
 
@@ -70,7 +78,11 @@ public class Network {
                                           int epochs,
                                           int miniBatchSize,
                                           double eta){
-        stochasticGradientDescent(trainingData, epochs, miniBatchSize, eta, null);
+        stochasticGradientDescent(trainingData,
+                epochs,
+                miniBatchSize,
+                eta,
+                null);
     }
 
     public void stochasticGradientDescent(RealMatrix trainingData,
@@ -78,15 +90,16 @@ public class Network {
                                           int miniBatchSize,
                                           double eta,
                                           RealMatrix testData){
-        //Local variable setup.
+        // Local variable setup.
         int nTest = -1;
         int miniBatchCount = trainingData.getRowDimension()/miniBatchSize;
         RealMatrix[] miniBatches = new RealMatrix[miniBatchCount];
         if(testData != null) nTest = testData.getRowDimension();
         int n = trainingData.getRowDimension();
-        double[][] temp = new double[miniBatchSize][trainingData.getColumnDimension()];
+        double[][] temp =
+                new double[miniBatchSize][trainingData.getColumnDimension()];
 
-        //Run this loop for each epoch.
+        // Run this loop for each epoch.
         for(int i = 0; i < epochs; i++) {
             //Randomize the training data.
             trainingData = EMatrixUtils.shuffleRows(trainingData);
@@ -101,14 +114,15 @@ public class Network {
                 miniBatches[j] = MatrixUtils.createRealMatrix(temp);
             }
 
-            //Run the mini batches.
+            // Run the mini batches.
             for (RealMatrix batch : miniBatches) {
                 updateMiniBatch(batch, eta);
             }
 
             //Output progress to command line.
             if(testData != null){
-                System.out.println("Epoch " + i + ": " + evaluate(testData) + "/" + nTest);
+                System.out.println("Epoch " + i + ": " + evaluate(testData) +
+                        "/" + nTest);
             } else {
                 System.out.println("Epoch " + i + " complete.");
             }
@@ -120,14 +134,19 @@ public class Network {
         return 0.0;
     }
 
+    // From the sample code in the textbook:
+    // Update the network's weights and biases by applying gradient descent
+    // using backpropagation to a single mini batch. The "batch" is a list of
+    // tuples "(x, y)", and "eta" is the learning rate.
     private void updateMiniBatch(RealMatrix batch, double eta) {
-        //I'm not a fan of these variable names, but at this point in the book the backpropagation algorithm hasn't
-        //really been explained. Once I have a better understanding I'll likely rename these variables to something
-        //a bit more intuitive.
+        // I'm not a fan of these variable names, but at this point in the book
+        // the backpropagation algorithm hasn't really been explained. Once I
+        // have a better understanding I'll likely rename these variables to
+        // something a bit more intuitive.
         RealVector[] nabla_b = new RealVector[biases.length];
         RealMatrix[] nabla_w = new RealMatrix[weights.length];
 
-        //Set up the nablas
+        // Set up the nablas
         for(int i = 0; i < biases.length; i++){
             nabla_b[i] = new ArrayRealVector(biases[i].getDimension(), 0.0);
         }
