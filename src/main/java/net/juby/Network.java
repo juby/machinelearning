@@ -144,11 +144,16 @@ public class Network {
         // have a better understanding I'll likely rename these variables to
         // something a bit more intuitive.
         RealVector[] nabla_b = new RealVector[biases.length];
+        RealVector[] delta_nabla_b = new RealVector[biases.length];
         RealMatrix[] nabla_w = new RealMatrix[weights.length];
+        RealMatrix[] delta_nabla_w = new RealMatrix[weights.length];
 
         // Set up the nablas
         for(int i = 0; i < biases.length; i++){
-            nabla_b[i] = new ArrayRealVector(biases[i].getDimension(), 0.0);
+            nabla_b[i] =
+                    new ArrayRealVector(biases[i].getDimension(), 0.0);
+            delta_nabla_b[i] =
+                    new ArrayRealVector(biases[i].getDimension(), 0.0);
         }
         for(int i = 0; i < weights.length; i++){
             int rows = weights[i].getRowDimension();
@@ -156,16 +161,50 @@ public class Network {
             RealVector temp = new ArrayRealVector(rows, 0.0);
 
             nabla_w[i] = new Array2DRowRealMatrix(rows, cols);
+            delta_nabla_w[i] = new Array2DRowRealMatrix(rows, cols);
 
             for(int j = 0; j < cols; j++){
                 nabla_w[i].setColumnVector(j, temp);
+                delta_nabla_w[i].setColumnVector(j, temp);
             }
         }
 
-        //todo updateMiniBatch
+        //Run the backpropagation algorithm for each entry in the batch.
+        for(int i = 0; i < batch.getRowDimension(); i++){
+            backpropagation(delta_nabla_b, delta_nabla_w, batch.getRowVector(i));
+            for(int j = 0; j < nabla_b.length; j++){
+                nabla_b[j].add(delta_nabla_b[j]);
+            }
+            for(int k = 0; k < nabla_w.length; k++){
+                nabla_w[k].add(delta_nabla_w[k]);
+            }
+        }
+
+        //Update the weights matrices.
+        for(int l = 0; l < weights.length; l++){
+            for(int m = 0; m < weights[l].getRowDimension(); m++){
+                for(int n = 0; n < weights[l].getColumnDimension(); n++){
+                    double current = weights[l].getEntry(m, n);
+                    double delta = (eta/batch.getRowDimension())*nabla_w[l].getEntry(m, n);
+                    weights[l].setEntry(m, n, current - delta);
+                }
+            }
+        }
+
+        //Update the bias vectors.
+        for(int p = 0; p < biases.length; p++){
+            for(int q = 0; q < biases[p].getDimension(); q++){
+                double current = biases[p].getEntry(q);
+                double delta = (eta/batch.getRowDimension()) * nabla_b[p].getEntry(q);
+                biases[p].setEntry(q, current - delta);
+            }
+        }
     }
 
-    //todo backpropagation
+    private void backpropagation(RealVector[] delta_nabla_b, RealMatrix[] delta_nabla_w, RealVector rowVector) {
+        //todo: backpropagation
+    }
+
     //todo costderivative
     //todo sigmoidprime - may just make this another Visitor
 }
