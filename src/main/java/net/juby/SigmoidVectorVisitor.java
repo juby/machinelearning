@@ -1,6 +1,5 @@
 package net.juby;
 
-import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.RealVectorChangingVisitor;
 
 public class SigmoidVectorVisitor implements RealVectorChangingVisitor {
