@@ -1,8 +1,11 @@
 package net.juby;
 
+import java.util.*;
 import org.apache.commons.math3.linear.*;
 import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
 import net.juby.exceptions.MalformedInputDataException;
+import net.juby.mnist.MnistReader;
+
 
 public class Network {
     //array of the number of neurons in each layer
@@ -61,6 +64,38 @@ public class Network {
         }
     }
 
+    /**
+     * Open the program with a list of the number of neurons in each layer, for
+     * example
+     *      java Network 764 30 10
+     * creates a neural network with 764 neurons in the first layer, 30 in the
+     * second, and 10 in the output layer.
+     * @param args Command line arguments
+     */
+    public static void main(String[] args){
+        int[] values;
+        try{
+            values = Arrays.stream(args).mapToInt(Integer::parseInt).toArray();
+        } catch (NumberFormatException e){
+            throw new MalformedInputDataException("The list of neuron counts "+
+                    "contains a value which is not a number.");
+        }
+
+        int[] trainingLabels = MnistReader.getLabels("D:\\Documents\\Projects"+
+                "\\machinelearning\\mnist_data\\train-labels.idx1-ubyte");
+        List<int[][]> trainingData = MnistReader.getImages("D:\\Documents"+
+                "\\Projects\\machinelearning\\mnist_data\\train-images.idx3-ubyte");
+
+        int[] testLabels = MnistReader.getLabels("D:\\Documents\\Projects"+
+                "\\machinelearning\\mnist_data\\t10k-labels.idx1-ubyte");
+        List<int[][]> testData = MnistReader.getImages("D:\\Documents"+
+                "\\Projects\\machinelearning\\mnist_data\\t10k-images.idx3-ubyte");
+
+        Network net = new Network(values);
+
+        //todo call to SGD (once the signature has been refactored)
+    }
+
     private RealVector feedForward(RealVector input){
         // The first layer is the input layer.
         RealVector ret = input.copy();
@@ -76,17 +111,6 @@ public class Network {
         return ret;
     }
 
-    public void stochasticGradientDescent(RealMatrix trainingData,
-                                          int epochs,
-                                          int miniBatchSize,
-                                          double eta){
-        stochasticGradientDescent(trainingData,
-                epochs,
-                miniBatchSize,
-                eta,
-                null);
-    }
-
     // testData should be formatted such that for each n, testData[0][n] is a
     // RealVector consisting of the greyscale values of the pixels in the test
     // image, and testData[1][n] is an Integer with the value of the 'correct'
@@ -96,10 +120,6 @@ public class Network {
                                           int miniBatchSize,
                                           double eta,
                                           Object[][] testData){
-        // Quick test to ensure the testData is set up correctly.
-        if(testData != null && !(testData[0][0] instanceof RealVector
-                && testData[0][1] instanceof Integer ))
-            throw new MalformedInputDataException("Test data not formatted correctly.");
 
         // Local variable setup.
         int nTest = -1;
