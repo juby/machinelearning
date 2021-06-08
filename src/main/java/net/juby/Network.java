@@ -67,8 +67,8 @@ public class Network {
     /**
      * Open the program with a list of the number of neurons in each layer, for
      * example
-     *      java Network 764 30 10
-     * creates a neural network with 764 neurons in the first layer, 30 in the
+     *      java Network 784 30 10
+     * creates a neural network with 784 neurons in the first layer, 30 in the
      * second, and 10 in the output layer.
      * @param args Command line arguments
      */
@@ -111,38 +111,75 @@ public class Network {
         return ret;
     }
 
-    // testData should be formatted such that for each n, testData[0][n] is a
-    // RealVector consisting of the greyscale values of the pixels in the test
-    // image, and testData[1][n] is an Integer with the value of the 'correct'
-    // result.
-    public void stochasticGradientDescent(RealMatrix trainingData,
+    private void stochasticGradientDescent(List<int[][]> trainingData,
+                                          int[] trainingLabels,
+                                          List<int[][]> testData,
+                                          int[] testLabels,
                                           int epochs,
                                           int miniBatchSize,
-                                          double eta,
-                                          Object[][] testData){
+                                          double eta){
 
         // Local variable setup.
-        int nTest = -1;
-        int miniBatchCount = trainingData.getRowDimension()/miniBatchSize;
+        int nTest = testLabels.length;
+        int miniBatchCount = trainingLabels.length/miniBatchSize;
         RealMatrix[] miniBatches = new RealMatrix[miniBatchCount];
-        if(testData != null) nTest = testData[0].length;
-        int n = trainingData.getRowDimension();
-        double[][] temp =
-                new double[miniBatchSize][trainingData.getColumnDimension()];
+
+        // Convert the training and test data from a List of 2D matrices into a
+        // RealMatrix, where the first column is the label and the remaining columns
+        // are the image data laid out such that each row begins in the position
+        // following the last entry of the previous row. We do this so we can
+        // easily shuffle the rows; later we can use utility methods to extract
+        // submatricies in order to do the necessary linear algebra.
+        RealMatrix trainingMatrix =
+                new Array2DRowRealMatrix(trainingData.size(), this.layerSizes[0] + 1);
+        for(int i = 0; i < trainingData.size(); i++){
+            int[][] tempAry = trainingData.get(i);
+            int tempAryRows = tempAry.length;
+            int tempAryCols = tempAry[0].length;
+
+            for(int j = 0; j < tempAryRows; j++){
+                for(int k = 0; k < tempAryCols; k++){
+                    double entryValue;
+
+                    if(k == 0) entryValue = trainingLabels[k];
+                    else entryValue = tempAry[j][k];
+
+                    trainingMatrix.setEntry(i, j*tempAryCols + k, entryValue);
+                }
+            }
+        }
+
+        RealMatrix testMatrix =
+                new Array2DRowRealMatrix(testData.size(), this.layerSizes[0] + 1);
+        for(int i = 0; i < testData.size(); i++){
+            int[][] tempAry = testData.get(i);
+            int tempAryRows = tempAry.length;
+            int tempAryCols = tempAry[0].length;
+            for(int j = 0; j < tempAryRows; j++){
+                for(int k = 0; k < tempAryCols; k++){
+                    double entryValue;
+
+                    if(k == 0) entryValue = testLabels[k];
+                    else entryValue = tempAry[j][k];
+
+                    testMatrix.setEntry(i, j*tempAryCols + k, entryValue);
+                }
+            }
+        }
 
         // Run this loop for each epoch.
         for(int i = 0; i < epochs; i++) {
             //Randomize the training data.
-            trainingData = EMatrixUtils.shuffleRows(trainingData);
+            trainingMatrix = EMatrixUtils.shuffleRows(trainingMatrix);
 
             //Generate the mini batches.
             for (int j = 0; j < miniBatchCount; j++) {
-                trainingData.copySubMatrix(j * miniBatchCount,
+                miniBatches[j] = trainingMatrix.getSubMatrix(
+                        j * miniBatchCount,
                         j * (miniBatchCount + 1) - 1,
                         0,
-                        trainingData.getColumnDimension() - 1,
-                        temp);
-                miniBatches[j] = MatrixUtils.createRealMatrix(temp);
+                        trainingMatrix.getColumnDimension() - 1
+                );
             }
 
             // Run the mini batches.
@@ -151,19 +188,19 @@ public class Network {
             }
 
             //Output progress to command line.
-            if(testData != null){
-                System.out.println("Epoch " + i + ": " + evaluate(testData) +
-                        "/" + nTest);
-            } else {
-                System.out.println("Epoch " + i + " complete.");
-            }
+
+            System.out.println("Epoch " + i + ": " + evaluate(testMatrix) +
+                    "/" + nTest);
+
         }
     }
 
     //Runs test data through the network and identifies the number of correct
     //answers, 'correct' being that the neuron corresponding to the desired result
     //has the highest activation
-    private int evaluate(Object[][] testData) {
+    private int evaluate(RealMatrix testData) {
+        //todo refactor evaluate
+        /*
         int total = 0;
         for(int i = 0; i < testData[0].length; i++){
             int targetValue = (Integer) testData[i][1];
@@ -171,6 +208,8 @@ public class Network {
             if(targetValue == resultValue) total += 1;
         }
         return total;
+         */
+        return 0;
     }
 
     // From the sample code in the textbook:
@@ -186,6 +225,8 @@ public class Network {
         RealVector[] delta_nabla_b = new RealVector[biases.length];
         RealMatrix[] nabla_w = new RealMatrix[weights.length];
         RealMatrix[] delta_nabla_w = new RealMatrix[weights.length];
+
+        //todo refactor this with new data structures in mind
 
         // Set up the nablas
         for(int i = 0; i < biases.length; i++){
