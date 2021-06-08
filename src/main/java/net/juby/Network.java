@@ -9,17 +9,17 @@ import net.juby.mnist.MnistReader;
 
 public class Network {
     //array of the number of neurons in each layer
-    private int[] layerSizes;
+    private final int[] layerSizes;
 
     //number of layers in the network, equivalent to layerSizes.length
-    private int numberOfLayers;
+    private final int numberOfLayers;
 
     //biases[i].getEntry(j) returns the bias on the (j+1)th neuron
     //    in the (i+1)th layer.
     //
     //example: biases[0].getEntry(1) returns the bias on the 2nd
     //  neuron in the 1st layer.
-    private RealVector[] biases;
+    private final RealVector[] biases;
 
     // weights[i].getEntry(j, k) gives the weights for the connection
     //    between the (k+1)th neuron in the (i+1)th layer and the
@@ -28,7 +28,7 @@ public class Network {
     // example: weights[1].getEntry(5, 7) returns the weight of the
     //    connection between the 8th neuron in the 2nd layer and the
     //    6th neuron in the 3rd layer.
-    private RealMatrix[] weights;
+    private final RealMatrix[] weights;
 
     public Network(int[] layerSizes){
         //Set the number of layers and the size of each layer.
@@ -65,14 +65,22 @@ public class Network {
     }
 
     /**
-     * Open the program with a list of the number of neurons in each layer, for
+     * Run the program with a list of the number of neurons in each layer, for
      * example
      *      java Network 784 30 10
-     * creates a neural network with 784 neurons in the first layer, 30 in the
-     * second, and 10 in the output layer.
+     * creates a neural network with 784 neurons in the input layer, 30 in a
+     * single hidden layer, and 10 in the output layer.
      * @param args Command line arguments
      */
     public static void main(String[] args){
+        // For now, I'm hardcoding these values. Down the line I'll rework the
+        // main method to allow these values to be specified from the command
+        // line.
+        int epochs = 30;
+        int miniBatchSize = 10;
+        double eta = 3.0;
+
+        // Extract the layer sizes from the command line.
         int[] values;
         try{
             values = Arrays.stream(args).mapToInt(Integer::parseInt).toArray();
@@ -81,6 +89,7 @@ public class Network {
                     "contains a value which is not a number.");
         }
 
+        // Extract the MNIST data.
         int[] trainingLabels = MnistReader.getLabels("D:\\Documents\\Projects"+
                 "\\machinelearning\\mnist_data\\train-labels.idx1-ubyte");
         List<int[][]> trainingData = MnistReader.getImages("D:\\Documents"+
@@ -91,9 +100,12 @@ public class Network {
         List<int[][]> testData = MnistReader.getImages("D:\\Documents"+
                 "\\Projects\\machinelearning\\mnist_data\\t10k-images.idx3-ubyte");
 
+        // Generate the neural network.
         Network net = new Network(values);
 
-        //todo call to SGD (once the signature has been refactored)
+        // Train the network using the MNIST data.
+        net.stochasticGradientDescent(trainingData, trainingLabels,
+                testData, testLabels, epochs, miniBatchSize, eta);
     }
 
     private RealVector feedForward(RealVector input){
