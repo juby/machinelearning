@@ -2,6 +2,7 @@ package net.juby;
 
 import org.apache.commons.math3.linear.*;
 import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
+import net.juby.exceptions.MalformedTestDataException;
 
 public class Network {
     //array of the number of neurons in each layer
@@ -33,7 +34,7 @@ public class Network {
         biases = new RealVector[numberOfLayers];
         weights = new RealMatrix[numberOfLayers - 1];
 
-        // Initialize the vectors/matrices
+        // Initialize the weights and biases.
         // First set all of the biases in the first layer to zero. The first
         // layer is the input layer, so no biases are needed. By setting it to
         // all zeros it makes our math a little easier later.
@@ -60,11 +61,12 @@ public class Network {
         }
     }
 
-    public RealVector feedForward(RealVector input){
-        //The first layer is the input layer.
+    private RealVector feedForward(RealVector input){
+        // The first layer is the input layer.
         RealVector ret = input.copy();
 
-        //For each layer, calculate a' = σ(wa+b).
+        // For each layer, calculate a' = σ(wa+b).
+        // [The operate() method multiplies the matrix by a given vector.]
         for(int i = 0; i < numberOfLayers; i++){
             weights[i].operate(ret).add(biases[i])
                     .walkInOptimizedOrder(new SigmoidVectorVisitor());
@@ -85,16 +87,25 @@ public class Network {
                 null);
     }
 
+    // testData should be formatted such that for each n, testData[0][n] is a
+    // RealVector consisting of the greyscale values of the pixels in the test
+    // image, and testData[1][n] is an Integer with the value of the 'correct'
+    // result.
     public void stochasticGradientDescent(RealMatrix trainingData,
                                           int epochs,
                                           int miniBatchSize,
                                           double eta,
-                                          RealMatrix testData){
+                                          Object[][] testData){
+        // Quick test to ensure the testData is set up correctly.
+        if(testData != null && !(testData[0][0] instanceof RealVector
+                && testData[0][1] instanceof Integer ))
+            throw new MalformedTestDataException("Test data not formatted correctly");
+
         // Local variable setup.
         int nTest = -1;
         int miniBatchCount = trainingData.getRowDimension()/miniBatchSize;
         RealMatrix[] miniBatches = new RealMatrix[miniBatchCount];
-        if(testData != null) nTest = testData.getRowDimension();
+        if(testData != null) nTest = testData[0].length;
         int n = trainingData.getRowDimension();
         double[][] temp =
                 new double[miniBatchSize][trainingData.getColumnDimension()];
@@ -129,9 +140,17 @@ public class Network {
         }
     }
 
-    private double evaluate(RealMatrix testData) {
-        //todo evaluate
-        return 0.0;
+    //Runs test data through the network and identifies the number of correct
+    //answers, 'correct' being that the neuron corresponding to the desired result
+    //has the highest activation
+    private int evaluate(Object[][] testData) {
+        int total = 0;
+        for(int i = 0; i < testData[0].length; i++){
+            int targetValue = (Integer) testData[i][1];
+            int resultValue = feedForward((RealVector) testData[i][0]).getMaxIndex();
+            if(targetValue == resultValue) total += 1;
+        }
+        return total;
     }
 
     // From the sample code in the textbook:
