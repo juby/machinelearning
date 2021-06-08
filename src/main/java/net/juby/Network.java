@@ -2,7 +2,7 @@ package net.juby;
 
 import org.apache.commons.math3.linear.*;
 import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
-import net.juby.exceptions.MalformedTestDataException;
+import net.juby.exceptions.MalformedInputDataException;
 
 public class Network {
     //array of the number of neurons in each layer
@@ -99,7 +99,7 @@ public class Network {
         // Quick test to ensure the testData is set up correctly.
         if(testData != null && !(testData[0][0] instanceof RealVector
                 && testData[0][1] instanceof Integer ))
-            throw new MalformedTestDataException("Test data not formatted correctly");
+            throw new MalformedInputDataException("Test data not formatted correctly.");
 
         // Local variable setup.
         int nTest = -1;
