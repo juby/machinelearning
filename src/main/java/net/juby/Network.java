@@ -9,17 +9,17 @@ import net.juby.mnist.MnistReader;
 
 public class Network {
     //array of the number of neurons in each layer
-    private final int[] layerSizes;
+    private int[] layerSizes;
 
     //number of layers in the network, equivalent to layerSizes.length
-    private final int numberOfLayers;
+    private int numberOfLayers;
 
     //biases[i].getEntry(j) returns the bias on the (j+1)th neuron
     //    in the (i+1)th layer.
     //
     //example: biases[0].getEntry(1) returns the bias on the 2nd
     //  neuron in the 1st layer.
-    private final RealVector[] biases;
+    private RealVector[] biases;
 
     // weights[i].getEntry(j, k) gives the weights for the connection
     //    between the (k+1)th neuron in the (i+1)th layer and the
@@ -28,7 +28,7 @@ public class Network {
     // example: weights[1].getEntry(5, 7) returns the weight of the
     //    connection between the 8th neuron in the 2nd layer and the
     //    6th neuron in the 3rd layer.
-    private final RealMatrix[] weights;
+    private RealMatrix[] weights;
 
     public Network(int[] layerSizes){
         //Set the number of layers and the size of each layer.
