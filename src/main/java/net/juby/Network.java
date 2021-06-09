@@ -245,26 +245,23 @@ public class Network {
         RealMatrix[] nabla_w = new RealMatrix[weights.length];
         RealMatrix[] delta_nabla_w = new RealMatrix[weights.length];
 
-        //todo refactor this with new data structures in mind
-
         // Set up the nablas
-        for(int i = 0; i < biases.length; i++){
-            nabla_b[i] =
-                    new ArrayRealVector(biases[i].getDimension(), 0.0);
-            delta_nabla_b[i] =
-                    new ArrayRealVector(biases[i].getDimension(), 0.0);
+        for(int r = 0; r < biases.length; r++){
+            nabla_b[r] =
+                    new ArrayRealVector(biases[r].getDimension(), 0.0);
+            delta_nabla_b[r] =
+                    new ArrayRealVector(biases[r].getDimension(), 0.0);
         }
-        for(int i = 0; i < weights.length; i++){
-            int rows = weights[i].getRowDimension();
-            int cols = weights[i].getColumnDimension();
-            RealVector temp = new ArrayRealVector(rows, 0.0);
+        for(int s = 0; s < weights.length; s++){
+            int rows = weights[s].getRowDimension();
+            int cols = weights[s].getColumnDimension();
 
-            nabla_w[i] = new Array2DRowRealMatrix(rows, cols);
-            delta_nabla_w[i] = new Array2DRowRealMatrix(rows, cols);
+            nabla_w[s] = new Array2DRowRealMatrix(rows, cols);
+            delta_nabla_w[s] = new Array2DRowRealMatrix(rows, cols);
 
-            for(int j = 0; j < cols; j++){
-                nabla_w[i].setColumnVector(j, temp);
-                delta_nabla_w[i].setColumnVector(j, temp);
+            for(int t = 0; t < cols; t++){
+                nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
+                delta_nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
             }
         }
 
@@ -300,7 +297,9 @@ public class Network {
         }
     }
 
-    private void backpropagation(RealVector[] delta_nabla_b, RealMatrix[] delta_nabla_w, RealVector rowVector) {
+    private void backpropagation(RealVector[] delta_nabla_b,
+                                 RealMatrix[] delta_nabla_w,
+                                 RealVector rowVector) {
         //todo: backpropagation
     }
 
