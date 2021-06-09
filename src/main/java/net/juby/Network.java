@@ -1,8 +1,11 @@
 package net.juby;
 
+import java.util.*;
 import org.apache.commons.math3.linear.*;
 import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
 import net.juby.exceptions.MalformedInputDataException;
+import net.juby.mnist.MnistReader;
+
 
 public class Network {
     //array of the number of neurons in each layer
@@ -61,6 +64,50 @@ public class Network {
         }
     }
 
+    /**
+     * Run the program with a list of the number of neurons in each layer, for
+     * example
+     *      java Network 784 30 10
+     * creates a neural network with 784 neurons in the input layer, 30 in a
+     * single hidden layer, and 10 in the output layer.
+     * @param args Command line arguments
+     */
+    public static void main(String[] args){
+        // For now, I'm hardcoding these values. Down the line I'll rework the
+        // main method to allow these values to be specified from the command
+        // line.
+        int epochs = 30;
+        int miniBatchSize = 10;
+        double eta = 3.0;
+
+        // Extract the layer sizes from the command line.
+        int[] values;
+        try{
+            values = Arrays.stream(args).mapToInt(Integer::parseInt).toArray();
+        } catch (NumberFormatException e){
+            throw new MalformedInputDataException("The list of neuron counts "+
+                    "contains a value which is not a number.");
+        }
+
+        // Extract the MNIST data.
+        int[] trainingLabels = MnistReader.getLabels("D:\\Documents\\Projects"+
+                "\\machinelearning\\mnist_data\\train-labels.idx1-ubyte");
+        List<int[][]> trainingData = MnistReader.getImages("D:\\Documents"+
+                "\\Projects\\machinelearning\\mnist_data\\train-images.idx3-ubyte");
+
+        int[] testLabels = MnistReader.getLabels("D:\\Documents\\Projects"+
+                "\\machinelearning\\mnist_data\\t10k-labels.idx1-ubyte");
+        List<int[][]> testData = MnistReader.getImages("D:\\Documents"+
+                "\\Projects\\machinelearning\\mnist_data\\t10k-images.idx3-ubyte");
+
+        // Generate the neural network.
+        Network net = new Network(values);
+
+        // Train the network using the MNIST data.
+        net.stochasticGradientDescent(trainingData, trainingLabels,
+                testData, testLabels, epochs, miniBatchSize, eta);
+    }
+
     private RealVector feedForward(RealVector input){
         // The first layer is the input layer.
         RealVector ret = input.copy();
@@ -76,53 +123,75 @@ public class Network {
         return ret;
     }
 
-    public void stochasticGradientDescent(RealMatrix trainingData,
+    private void stochasticGradientDescent(List<int[][]> trainingData,
+                                          int[] trainingLabels,
+                                          List<int[][]> testData,
+                                          int[] testLabels,
                                           int epochs,
                                           int miniBatchSize,
                                           double eta){
-        stochasticGradientDescent(trainingData,
-                epochs,
-                miniBatchSize,
-                eta,
-                null);
-    }
-
-    // testData should be formatted such that for each n, testData[0][n] is a
-    // RealVector consisting of the greyscale values of the pixels in the test
-    // image, and testData[1][n] is an Integer with the value of the 'correct'
-    // result.
-    public void stochasticGradientDescent(RealMatrix trainingData,
-                                          int epochs,
-                                          int miniBatchSize,
-                                          double eta,
-                                          Object[][] testData){
-        // Quick test to ensure the testData is set up correctly.
-        if(testData != null && !(testData[0][0] instanceof RealVector
-                && testData[0][1] instanceof Integer ))
-            throw new MalformedInputDataException("Test data not formatted correctly.");
 
         // Local variable setup.
-        int nTest = -1;
-        int miniBatchCount = trainingData.getRowDimension()/miniBatchSize;
+        int nTest = testLabels.length;
+        int miniBatchCount = trainingLabels.length/miniBatchSize;
         RealMatrix[] miniBatches = new RealMatrix[miniBatchCount];
-        if(testData != null) nTest = testData[0].length;
-        int n = trainingData.getRowDimension();
-        double[][] temp =
-                new double[miniBatchSize][trainingData.getColumnDimension()];
+
+        // Convert the training and test data from a List of 2D matrices into a
+        // RealMatrix, where the first column is the label and the remaining columns
+        // are the image data laid out such that each row begins in the position
+        // following the last entry of the previous row. We do this so we can
+        // easily shuffle the rows; later we can use utility methods to extract
+        // submatricies in order to do the necessary linear algebra.
+        RealMatrix trainingMatrix =
+                new Array2DRowRealMatrix(trainingData.size(), this.layerSizes[0] + 1);
+        for(int i = 0; i < trainingData.size(); i++){
+            int[][] tempAry = trainingData.get(i);
+            int tempAryRows = tempAry.length;
+            int tempAryCols = tempAry[0].length;
+
+            for(int j = 0; j < tempAryRows; j++){
+                for(int k = 0; k < tempAryCols; k++){
+                    double entryValue;
+
+                    if(k == 0) entryValue = trainingLabels[k];
+                    else entryValue = tempAry[j][k];
+
+                    trainingMatrix.setEntry(i, j*tempAryCols + k, entryValue);
+                }
+            }
+        }
+
+        RealMatrix testMatrix =
+                new Array2DRowRealMatrix(testData.size(), this.layerSizes[0] + 1);
+        for(int i = 0; i < testData.size(); i++){
+            int[][] tempAry = testData.get(i);
+            int tempAryRows = tempAry.length;
+            int tempAryCols = tempAry[0].length;
+            for(int j = 0; j < tempAryRows; j++){
+                for(int k = 0; k < tempAryCols; k++){
+                    double entryValue;
+
+                    if(k == 0) entryValue = testLabels[k];
+                    else entryValue = tempAry[j][k];
+
+                    testMatrix.setEntry(i, j*tempAryCols + k, entryValue);
+                }
+            }
+        }
 
         // Run this loop for each epoch.
         for(int i = 0; i < epochs; i++) {
             //Randomize the training data.
-            trainingData = EMatrixUtils.shuffleRows(trainingData);
+            trainingMatrix = EMatrixUtils.shuffleRows(trainingMatrix);
 
             //Generate the mini batches.
             for (int j = 0; j < miniBatchCount; j++) {
-                trainingData.copySubMatrix(j * miniBatchCount,
+                miniBatches[j] = trainingMatrix.getSubMatrix(
+                        j * miniBatchCount,
                         j * (miniBatchCount + 1) - 1,
                         0,
-                        trainingData.getColumnDimension() - 1,
-                        temp);
-                miniBatches[j] = MatrixUtils.createRealMatrix(temp);
+                        trainingMatrix.getColumnDimension() - 1
+                );
             }
 
             // Run the mini batches.
@@ -131,23 +200,32 @@ public class Network {
             }
 
             //Output progress to command line.
-            if(testData != null){
-                System.out.println("Epoch " + i + ": " + evaluate(testData) +
-                        "/" + nTest);
-            } else {
-                System.out.println("Epoch " + i + " complete.");
-            }
+
+            System.out.println("Epoch " + i + ": " + evaluate(testMatrix) +
+                    "/" + nTest);
+
         }
     }
 
-    //Runs test data through the network and identifies the number of correct
-    //answers, 'correct' being that the neuron corresponding to the desired result
-    //has the highest activation
-    private int evaluate(Object[][] testData) {
-        int total = 0;
-        for(int i = 0; i < testData[0].length; i++){
-            int targetValue = (Integer) testData[i][1];
-            int resultValue = feedForward((RealVector) testData[i][0]).getMaxIndex();
+    // Runs test data through the network and identifies the number of correct
+    // answers, 'correct' being that the neuron corresponding to the desired
+    // result has the highest activation
+    private int evaluate(RealMatrix testData) {
+        int total, targetValue, resultValue;
+        total = 0;
+
+        // Loop through all of the test data
+        for(int i = 0; i < testData.getRowDimension(); i++){
+            targetValue = (int) testData.getEntry(i, 0);
+
+            // Extract the test case from the matrix, feed it through, and get
+            // the max index (as neuron 0 represents the neuron with the net's
+            // 'guess' at how likely it's a 0, and so on).
+            resultValue = feedForward(
+                    new ArrayRealVector(testData.getRow(i), 1, testData.getColumnDimension())
+                ).getMaxIndex();
+
+            // Add to the running tally if it's a correct answer.
             if(targetValue == resultValue) total += 1;
         }
         return total;
@@ -168,23 +246,22 @@ public class Network {
         RealMatrix[] delta_nabla_w = new RealMatrix[weights.length];
 
         // Set up the nablas
-        for(int i = 0; i < biases.length; i++){
-            nabla_b[i] =
-                    new ArrayRealVector(biases[i].getDimension(), 0.0);
-            delta_nabla_b[i] =
-                    new ArrayRealVector(biases[i].getDimension(), 0.0);
+        for(int r = 0; r < biases.length; r++){
+            nabla_b[r] =
+                    new ArrayRealVector(biases[r].getDimension(), 0.0);
+            delta_nabla_b[r] =
+                    new ArrayRealVector(biases[r].getDimension(), 0.0);
         }
-        for(int i = 0; i < weights.length; i++){
-            int rows = weights[i].getRowDimension();
-            int cols = weights[i].getColumnDimension();
-            RealVector temp = new ArrayRealVector(rows, 0.0);
+        for(int s = 0; s < weights.length; s++){
+            int rows = weights[s].getRowDimension();
+            int cols = weights[s].getColumnDimension();
 
-            nabla_w[i] = new Array2DRowRealMatrix(rows, cols);
-            delta_nabla_w[i] = new Array2DRowRealMatrix(rows, cols);
+            nabla_w[s] = new Array2DRowRealMatrix(rows, cols);
+            delta_nabla_w[s] = new Array2DRowRealMatrix(rows, cols);
 
-            for(int j = 0; j < cols; j++){
-                nabla_w[i].setColumnVector(j, temp);
-                delta_nabla_w[i].setColumnVector(j, temp);
+            for(int t = 0; t < cols; t++){
+                nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
+                delta_nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
             }
         }
 
@@ -220,7 +297,9 @@ public class Network {
         }
     }
 
-    private void backpropagation(RealVector[] delta_nabla_b, RealMatrix[] delta_nabla_w, RealVector rowVector) {
+    private void backpropagation(RealVector[] delta_nabla_b,
+                                 RealMatrix[] delta_nabla_w,
+                                 RealVector rowVector) {
         //todo: backpropagation
     }
 

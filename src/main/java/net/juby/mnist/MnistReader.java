@@ -1,4 +1,4 @@
-package mnist;
+package net.juby.mnist;
 
 import static java.lang.String.format;
 
@@ -10,8 +10,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MnistReader {
-	public static final int LABEL_FILE_MAGIC_NUMBER = 2049;
-	public static final int IMAGE_FILE_MAGIC_NUMBER = 2051;
+	private static final int LABEL_FILE_MAGIC_NUMBER = 2049;
+	private static final int IMAGE_FILE_MAGIC_NUMBER = 2051;
 
 	public static int[] getLabels(String infile) {
 
@@ -58,7 +58,7 @@ public class MnistReader {
 		return row;
 	}
 
-	public static void assertMagicNumber(int expectedMagicNumber, int magicNumber) {
+	private static void assertMagicNumber(int expectedMagicNumber, int magicNumber) {
 		if (expectedMagicNumber != magicNumber) {
 			switch (expectedMagicNumber) {
 			case LABEL_FILE_MAGIC_NUMBER:
@@ -77,11 +77,11 @@ public class MnistReader {
 	 * them. ;-)
 	 ******/
 
-	public static ByteBuffer loadFileToByteBuffer(String infile) {
+	private static ByteBuffer loadFileToByteBuffer(String infile) {
 		return ByteBuffer.wrap(loadFile(infile));
 	}
 
-	public static byte[] loadFile(String infile) {
+	private static byte[] loadFile(String infile) {
 		try {
 			RandomAccessFile f = new RandomAccessFile(infile, "r");
 			FileChannel chan = f.getChannel();
@@ -100,7 +100,7 @@ public class MnistReader {
 		}
 	}
 
-	public static String renderImage(int[][] image) {
+	private static String renderImage(int[][] image) {
 		StringBuilder sb = new StringBuilder();
 
 		for (int[] ints : image) {
@@ -121,7 +121,7 @@ public class MnistReader {
 		return sb.toString();
 	}
 
-	public static String repeat(String s, int n) {
+	private static String repeat(String s, int n) {
 		StringBuilder sb = new StringBuilder();
 		for (int i = 0; i < n; i++)
 			sb.append(s);
