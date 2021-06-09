@@ -218,19 +218,12 @@ public class Network {
         for(int i = 0; i < testData.getRowDimension(); i++){
             targetValue = (int) testData.getEntry(i, 0);
 
-            // Maybe there's a more elegant way to do this, but for now we need
-            // to   1)pull everything but the first column into a matrix
-            //      2)turn that matrix into a vector
-            //      3)feed that vector through the net
-            //      4)then pull the maximum value
+            // Extract the test case from the matrix, feed it through, and get
+            // the max index (as neuron 0 represents the neuron with the net's
+            // 'guess' at how likely it's a 0, and so on).
             resultValue = feedForward(
-                    testData.getSubMatrix(
-                            i,
-                            i,
-                            1,
-                            testData.getColumnDimension()
-                    ).getRowVector(0)
-            ).getMaxIndex();
+                    new ArrayRealVector(testData.getRow(i), 1, testData.getColumnDimension())
+                ).getMaxIndex();
 
             // Add to the running tally if it's a correct answer.
             if(targetValue == resultValue) total += 1;
