@@ -207,21 +207,35 @@ public class Network {
         }
     }
 
-    //Runs test data through the network and identifies the number of correct
-    //answers, 'correct' being that the neuron corresponding to the desired result
-    //has the highest activation
+    // Runs test data through the network and identifies the number of correct
+    // answers, 'correct' being that the neuron corresponding to the desired
+    // result has the highest activation
     private int evaluate(RealMatrix testData) {
-        //todo refactor evaluate
-        /*
         int total = 0;
-        for(int i = 0; i < testData[0].length; i++){
-            int targetValue = (Integer) testData[i][1];
-            int resultValue = feedForward((RealVector) testData[i][0]).getMaxIndex();
+
+        // Loop through all of the test data
+        for(int i = 0; i < testData.getRowDimension(); i++){
+            int targetValue, resultValue;
+            targetValue = (int) testData.getEntry(i, 0);
+
+            // Maybe there's a more elegant way to do this, but for now we need
+            // to   1)pull everything but the first column into a matrix
+            //      2)turn that matrix into a vector
+            //      3)feed that vector through the net
+            //      4)then pull the maximum value
+            resultValue = (int) feedForward(
+                    testData.getSubMatrix(
+                            i,
+                            i,
+                            1,
+                            testData.getColumnDimension()
+                    ).getRowVector(0)
+            ).getMaxValue();
+
+            // Add to the running tally if it's a correct answer.
             if(targetValue == resultValue) total += 1;
         }
         return total;
-         */
-        return 0;
     }
 
     // From the sample code in the textbook:
