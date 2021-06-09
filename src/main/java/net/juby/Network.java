@@ -211,11 +211,11 @@ public class Network {
     // answers, 'correct' being that the neuron corresponding to the desired
     // result has the highest activation
     private int evaluate(RealMatrix testData) {
-        int total = 0;
+        int total, targetValue, resultValue;
+        total = 0;
 
         // Loop through all of the test data
         for(int i = 0; i < testData.getRowDimension(); i++){
-            int targetValue, resultValue;
             targetValue = (int) testData.getEntry(i, 0);
 
             // Maybe there's a more elegant way to do this, but for now we need
@@ -223,14 +223,14 @@ public class Network {
             //      2)turn that matrix into a vector
             //      3)feed that vector through the net
             //      4)then pull the maximum value
-            resultValue = (int) feedForward(
+            resultValue = feedForward(
                     testData.getSubMatrix(
                             i,
                             i,
                             1,
                             testData.getColumnDimension()
                     ).getRowVector(0)
-            ).getMaxValue();
+            ).getMaxIndex();
 
             // Add to the running tally if it's a correct answer.
             if(targetValue == resultValue) total += 1;
