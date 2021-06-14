@@ -205,7 +205,8 @@ public class Network {
             // the max index (as neuron 0 represents the neuron with the net's
             // 'guess' at how likely it's a 0, and so on).
             resultValue = feedForward(
-                    new ArrayRealVector(testData.getRow(i), 1, testData.getColumnDimension())
+                    new ArrayRealVector(testData.getRow(i), 1,
+                            testData.getColumnDimension() - 1)
                 ).getMaxIndex();
 
             // Add to the running tally if it's a correct answer.
