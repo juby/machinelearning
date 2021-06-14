@@ -131,7 +131,7 @@ public class Network {
             int tempAryRows = tempAry.length;
             int tempAryCols = tempAry[0].length;
 
-            for(int j = 0; j < tempAryRows + 1; j++){
+            for(int j = 0; j < tempAryRows; j++){
                 for(int k = 0; k < tempAryCols + 1; k++){
                     double entryValue;
 
@@ -143,6 +143,7 @@ public class Network {
             }
         }
 
+        // Generate a RealMatrix of the test data.
         RealMatrix testMatrix =
                 new Array2DRowRealMatrix(testData.size(), this.layerSizes[0] + 1);
         for(int i = 0; i < testData.size(); i++){
@@ -150,11 +151,11 @@ public class Network {
             int tempAryRows = tempAry.length;
             int tempAryCols = tempAry[0].length;
             for(int j = 0; j < tempAryRows; j++){
-                for(int k = 0; k < tempAryCols; k++){
+                for(int k = 0; k < tempAryCols + 1; k++){
                     double entryValue;
 
                     if(k == 0) entryValue = testLabels[k];
-                    else entryValue = tempAry[j][k];
+                    else entryValue = tempAry[j][k - 1];
 
                     testMatrix.setEntry(i, j*tempAryCols + k, entryValue);
                 }
@@ -182,7 +183,6 @@ public class Network {
             }
 
             //Output progress to command line.
-
             System.out.println("Epoch " + i + ": " + evaluate(testMatrix) +
                     "/" + nTest);
 
