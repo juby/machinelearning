@@ -45,7 +45,7 @@ public class Network {
         }
     }
 
-    /**
+    /*
      * Run the program with a list of the number of neurons in each layer, for
      * example
      *      java Network 784 30 10
@@ -124,19 +124,19 @@ public class Network {
         // following the last entry of the previous row. We do this so we can
         // easily shuffle the rows; later we can use utility methods to extract
         // submatricies in order to do the necessary linear algebra.
-        RealMatrix trainingMatrix =
-                new Array2DRowRealMatrix(trainingData.size(), this.layerSizes[0] + 1);
+        RealMatrix trainingMatrix = new Array2DRowRealMatrix(trainingData.size(),
+                        this.layerSizes[0] + 1);
         for(int i = 0; i < trainingData.size(); i++){
             int[][] tempAry = trainingData.get(i);
             int tempAryRows = tempAry.length;
             int tempAryCols = tempAry[0].length;
 
-            for(int j = 0; j < tempAryRows; j++){
-                for(int k = 0; k < tempAryCols; k++){
+            for(int j = 0; j < tempAryRows + 1; j++){
+                for(int k = 0; k < tempAryCols + 1; k++){
                     double entryValue;
 
                     if(k == 0) entryValue = trainingLabels[k];
-                    else entryValue = tempAry[j][k];
+                    else entryValue = tempAry[j][k - 1];
 
                     trainingMatrix.setEntry(i, j*tempAryCols + k, entryValue);
                 }
