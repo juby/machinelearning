@@ -169,9 +169,10 @@ public class Network {
 
             //Generate the mini batches.
             for (int j = 0; j < miniBatchCount; j++) {
+                int start = j * miniBatchCount;
                 miniBatches[j] = trainingMatrix.getSubMatrix(
-                        j * miniBatchCount,
-                        j * (miniBatchCount + 1) - 1,
+                        start,
+                        start + miniBatchCount - 1,
                         0,
                         trainingMatrix.getColumnDimension() - 1
                 );
