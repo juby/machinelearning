@@ -1,6 +1,8 @@
 package net.juby;
 
 import java.util.*;
+
+import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.math3.linear.*;
 import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
 import net.juby.exceptions.MalformedInputDataException;
@@ -89,13 +91,14 @@ public class Network {
 
     private RealVector feedForward(RealVector input){
         // The first layer is the input layer.
-        RealVector ret = input.copy();
+        RealVector ret = new ArrayRealVector(input);
+        SigmoidVectorVisitor visitor = new SigmoidVectorVisitor();
 
         // For each layer, calculate a' = σ(wa+b).
         // [The operate() method multiplies the matrix by a given vector.]
         for(int i = 0; i < numberOfLayers; i++){
-            weights[i].operate(ret).add(biases[i])
-                    .walkInOptimizedOrder(new SigmoidVectorVisitor());
+            ret = weights[i].operate(ret).add(biases[i]);
+            ret.walkInOptimizedOrder(visitor);
         }
 
         // After all layers have been processed, ret contains the output layer.
