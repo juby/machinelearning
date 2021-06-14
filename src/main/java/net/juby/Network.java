@@ -123,7 +123,7 @@ public class Network {
         // are the image data laid out such that each row begins in the position
         // following the last entry of the previous row. We do this so we can
         // easily shuffle the rows; later we can use utility methods to extract
-        // submatricies in order to do the necessary linear algebra.
+        // submatrices in order to do the necessary linear algebra.
         RealMatrix trainingMatrix = new Array2DRowRealMatrix(trainingData.size(),
                         this.layerSizes[0] + 1);
         for(int i = 0; i < trainingData.size(); i++){
@@ -220,10 +220,8 @@ public class Network {
     // using backpropagation to a single mini batch. The "batch" is a list of
     // tuples "(x, y)", and "eta" is the learning rate.
     private void updateMiniBatch(RealMatrix batch, double eta) {
-        // I'm not a fan of these variable names, but at this point in the book
-        // the backpropagation algorithm hasn't really been explained. Once I
-        // have a better understanding I'll likely rename these variables to
-        // something a bit more intuitive.
+        // I'm still not sure what 'nabla' is short for, exactly, but these are
+        // the vectors and matrices that will store the activations and deltas.
         RealVector[] nabla_b = new RealVector[biases.length];
         RealVector[] delta_nabla_b = new RealVector[biases.length];
         RealMatrix[] nabla_w = new RealMatrix[weights.length];
