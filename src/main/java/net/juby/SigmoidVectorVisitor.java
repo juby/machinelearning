@@ -9,9 +9,13 @@ public class SigmoidVectorVisitor implements RealVectorChangingVisitor {
         //not used
     }
 
+    protected static double sigmoid(double v) {
+        return 1.0/(1.0 + Math.exp(-v));
+    }
+
     @Override
     public double visit(int i, double v) {
-        return 1.0/(1.0 + Math.exp(-v));
+        return sigmoid(v);
     }
 
     @Override
