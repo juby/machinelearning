@@ -298,6 +298,23 @@ public class Network {
         RealVector desiredActivations = new ArrayRealVector(10, 0.0);
         desiredActivations.setEntry((int) trainingItem.getEntry(0), 1.0);
 
+        // Reset the deltas
+        // Set up the nabla arrays
+        for(int r = 0; r < biases.length; r++){
+            delta_nabla_b[r] =
+                    new ArrayRealVector(biases[r].getDimension(), 0.0);
+        }
+        for(int s = 0; s < weights.length; s++){
+            int rows = weights[s].getRowDimension();
+            int cols = weights[s].getColumnDimension();
+
+            delta_nabla_w[s] = new Array2DRowRealMatrix(rows, cols);
+
+            for(int t = 0; t < cols; t++){
+                delta_nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
+            }
+        }
+
         // Local variable setup
         RealVector[] activations = new RealVector[this.numberOfLayers];
         activations[0] = trainingItem.getSubVector(1, trainingItem.getDimension() - 1);
