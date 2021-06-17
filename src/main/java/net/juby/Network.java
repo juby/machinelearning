@@ -135,8 +135,11 @@ public class Network {
                 for(int k = 0; k < tempAryCols + 1; k++){
                     double entryValue;
 
+                    // I don't think that normalizing the entries to be between
+                    // 0 and 1 (inclusive) is strictly necessary, but it doesn't
+                    // hurt.
                     if(k == 0) entryValue = trainingLabels[k];
-                    else entryValue = tempAry[j][k - 1];
+                    else entryValue = tempAry[j][k - 1]/255.0;
 
                     trainingMatrix.setEntry(i, j*tempAryCols + k, entryValue);
                 }
@@ -155,7 +158,7 @@ public class Network {
                     double entryValue;
 
                     if(k == 0) entryValue = testLabels[k];
-                    else entryValue = tempAry[j][k - 1];
+                    else entryValue = tempAry[j][k - 1]/255.0;
 
                     testMatrix.setEntry(i, j*tempAryCols + k, entryValue);
                 }
