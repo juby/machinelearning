@@ -2,7 +2,6 @@ package net.juby;
 
 import java.util.*;
 
-import org.apache.commons.lang3.SerializationUtils;
 import org.apache.commons.math3.linear.*;
 import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
 import net.juby.exceptions.MalformedInputDataException;
@@ -10,10 +9,10 @@ import net.juby.mnist.MnistReader;
 
 
 public class Network {
-    private int[] layerSizes;
-    private int numberOfLayers;
-    private RealVector[] biases;
-    private RealMatrix[] weights;
+    private final int[] layerSizes;
+    private final int numberOfLayers;
+    private final RealVector[] biases;
+    private final RealMatrix[] weights;
 
     public Network(int[] layerSizes){
         //Set the number of layers and the size of each layer.
@@ -57,6 +56,7 @@ public class Network {
         // For now, I'm hardcoding these values. Down the line I'll rework the
         // main method to allow these values to be specified from the command
         // line.
+        // todo Make command line arguments more flexible
         int epochs = 30;
         int miniBatchSize = 10;
         double eta = 3.0;
@@ -168,7 +168,6 @@ public class Network {
                                           int epochs,
                                           int miniBatchSize,
                                           double eta){
-
         // Local variable setup.
         int nTest = testMatrix.getRowDimension();
         int miniBatchCount = trainingMatrix.getRowDimension()/miniBatchSize;
@@ -232,14 +231,14 @@ public class Network {
     // using backpropagation to a single mini batch. The "batch" is a list of
     // tuples "(x, y)", and "eta" is the learning rate.
     private void updateMiniBatch(RealMatrix batch, double eta) {
-        // I'm still not sure what 'nabla' is short for, exactly, but these are
-        // the vectors and matrices that will store the activations and deltas.
+        // These are the vectors and matrices that will store the changes to the
+        // weights and biases during each epoch.
         RealVector[] nabla_b = new RealVector[biases.length];
         RealVector[] delta_nabla_b = new RealVector[biases.length];
         RealMatrix[] nabla_w = new RealMatrix[weights.length];
         RealMatrix[] delta_nabla_w = new RealMatrix[weights.length];
 
-        // Set up the nablas
+        // Set up the nabla arrays
         for(int r = 0; r < biases.length; r++){
             nabla_b[r] =
                     new ArrayRealVector(biases[r].getDimension(), 0.0);
@@ -293,10 +292,47 @@ public class Network {
 
     private void backpropagation(RealVector[] delta_nabla_b,
                                  RealMatrix[] delta_nabla_w,
-                                 RealVector rowVector) {
-        //todo: backpropagation
+                                 RealVector trainingItem) {
+        // First, let's extract the label from the rest of the data and put it
+        // into a vector for when we need to compute the cost derivative.
+        RealVector desiredActivations = new ArrayRealVector(10, 0.0);
+        desiredActivations.setEntry((int) trainingItem.getEntry(0), 1.0);
+
+        // Local variable setup
+        RealVector[] activations = new RealVector[this.numberOfLayers];
+        activations[0] = trainingItem.getSubVector(1, trainingItem.getDimension() - 1);
+        RealVector[] weightedInputs = new RealVector[this.numberOfLayers - 1];
+        SigmoidVectorVisitor sigmoidVectorVisitor = new SigmoidVectorVisitor();
+        SigmoidPrimeVectorVisitor sigmoidPrimeVectorVisitor = new SigmoidPrimeVectorVisitor();
+        RealVector z;
+
+        // Feed forward
+        for(int i = 0; i < this.numberOfLayers - 1; i++){
+            weightedInputs[i] = weights[i].operate(activations[i]).add(biases[i]);
+            activations[i + 1] = weightedInputs[i];
+            activations[i + 1].walkInOptimizedOrder(sigmoidVectorVisitor);
+        }
+
+        // Backward pass
+        RealVector sigmoidPrimeWL = weightedInputs[weightedInputs.length - 1];
+        sigmoidPrimeWL.walkInOptimizedOrder(sigmoidPrimeVectorVisitor);
+        RealVector delta =
+                costDerivative(activations[this.numberOfLayers - 1], desiredActivations)
+                        .ebeMultiply(sigmoidPrimeWL);
+        delta_nabla_b[delta_nabla_b.length - 1] = delta.copy();
+        delta_nabla_w[delta_nabla_w.length - 1] =
+                delta.outerProduct(activations[this.numberOfLayers - 2]);
+
+        for(int l = this.numberOfLayers - 2; l >= 0; l--){
+            z = weightedInputs[l].copy();
+            z.walkInOptimizedOrder(sigmoidPrimeVectorVisitor);
+            delta = this.weights[l + 1].transpose().operate(delta).ebeMultiply(z);
+            delta_nabla_b[l] = delta.copy();
+            delta_nabla_w[l] = delta.outerProduct(activations[l-1]);
+        }
     }
 
-    //todo costderivative
-    //todo sigmoidprime - may just make this another Visitor
+    private static RealVector costDerivative(RealVector outputActivations, RealVector desiredActivations){
+        return outputActivations.subtract(desiredActivations);
+    }
 }
