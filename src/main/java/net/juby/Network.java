@@ -84,48 +84,31 @@ public class Network {
         // Generate the neural network.
         Network net = new Network(values);
 
+        // Convert the data in to matrices we can use
+        RealMatrix trainingMatrix, testMatrix;
+        trainingMatrix = new Array2DRowRealMatrix(trainingData.size(),
+                net.layerSizes[0] + 1);
+        testMatrix =
+                new Array2DRowRealMatrix(testData.size(), net.layerSizes[0] + 1);
+        convertData(trainingData, trainingLabels, testData, testLabels, trainingMatrix, testMatrix);
+
         // Train the network using the MNIST data.
-        net.stochasticGradientDescent(trainingData, trainingLabels,
-                testData, testLabels, epochs, miniBatchSize, eta);
+        net.stochasticGradientDescent(trainingMatrix, testMatrix,
+                epochs, miniBatchSize, eta);
     }
 
-    private RealVector feedForward(RealVector input){
-        // The first layer is the input layer.
-        RealVector ret = new ArrayRealVector(input);
-        SigmoidVectorVisitor visitor = new SigmoidVectorVisitor();
-
-        // For each layer, calculate a' = σ(wa+b).
-        // [The operate() method multiplies the matrix by a given vector.]
-        for(int i = 0; i < numberOfLayers; i++){
-            ret = weights[i].operate(ret).add(biases[i]);
-            ret.walkInOptimizedOrder(visitor);
-        }
-
-        // After all layers have been processed, ret contains the output layer.
-        return ret;
-    }
-
-    private void stochasticGradientDescent(List<int[][]> trainingData,
-                                          int[] trainingLabels,
-                                          List<int[][]> testData,
-                                          int[] testLabels,
-                                          int epochs,
-                                          int miniBatchSize,
-                                          double eta){
-
-        // Local variable setup.
-        int nTest = testLabels.length;
-        int miniBatchCount = trainingLabels.length/miniBatchSize;
-        RealMatrix[] miniBatches = new RealMatrix[miniBatchCount];
-
+    private static void convertData(List<int[][]> trainingData,
+                             int[] trainingLabels,
+                             List<int[][]> testData,
+                             int[] testLabels,
+                             RealMatrix trainingMatrix,
+                             RealMatrix testMatrix){
         // Convert the training and test data from a List of 2D matrices into a
         // RealMatrix, where the first column is the label and the remaining columns
         // are the image data laid out such that each row begins in the position
         // following the last entry of the previous row. We do this so we can
         // easily shuffle the rows; later we can use utility methods to extract
         // submatrices in order to do the necessary linear algebra.
-        RealMatrix trainingMatrix = new Array2DRowRealMatrix(trainingData.size(),
-                        this.layerSizes[0] + 1);
         for(int i = 0; i < trainingData.size(); i++){
             int[][] tempAry = trainingData.get(i);
             int tempAryRows = tempAry.length;
@@ -147,8 +130,6 @@ public class Network {
         }
 
         // Generate a RealMatrix of the test data.
-        RealMatrix testMatrix =
-                new Array2DRowRealMatrix(testData.size(), this.layerSizes[0] + 1);
         for(int i = 0; i < testData.size(); i++){
             int[][] tempAry = testData.get(i);
             int tempAryRows = tempAry.length;
@@ -164,6 +145,34 @@ public class Network {
                 }
             }
         }
+    }
+
+    private RealVector feedForward(RealVector input){
+        // The first layer is the input layer.
+        RealVector ret = new ArrayRealVector(input);
+        SigmoidVectorVisitor visitor = new SigmoidVectorVisitor();
+
+        // For each layer, calculate a' = σ(wa+b).
+        // [The operate() method multiplies the matrix by a given vector.]
+        for(int i = 0; i < numberOfLayers; i++){
+            ret = weights[i].operate(ret).add(biases[i]);
+            ret.walkInOptimizedOrder(visitor);
+        }
+
+        // After all layers have been processed, ret contains the output layer.
+        return ret;
+    }
+
+    private void stochasticGradientDescent(RealMatrix trainingMatrix,
+                                          RealMatrix testMatrix,
+                                          int epochs,
+                                          int miniBatchSize,
+                                          double eta){
+
+        // Local variable setup.
+        int nTest = testMatrix.getRowDimension();
+        int miniBatchCount = trainingMatrix.getRowDimension()/miniBatchSize;
+        RealMatrix[] miniBatches = new RealMatrix[miniBatchCount];
 
         // Run this loop for each epoch.
         for(int i = 0; i < epochs; i++) {
