@@ -18,13 +18,17 @@ public class Network {
         //Set the number of layers and the size of each layer.
         this.layerSizes = layerSizes;
         numberOfLayers = layerSizes.length;
-        biases = new RealVector[numberOfLayers - 1];
+        biases = new RealVector[numberOfLayers];
         weights = new RealMatrix[numberOfLayers - 1];
 
         // Initialize the weights and biases.
 
         // Create the vectors for each layer and initialize with random values.
-        for(int i = 1; i < biases.length; i++){
+        // biases[i] contains the biases for the (i+1)th layer.
+        // We create a vector of biases for the 1st layer (biases[0]) but we
+        // won't actually be using it. It's just there to make things a little
+        // cleaner.
+        for(int i = 0; i < biases.length; i++){
             int vectorLength = layerSizes[i];
             biases[i] = new ArrayRealVector(vectorLength);
             for(int j = 0; j < vectorLength; j++){
@@ -32,13 +36,15 @@ public class Network {
             }
         }
         // Finally create the weights matrices and initialize with random values.
+        // weights[i] contains the weights connecting the (i+1)th layer to the
+        // (i+2)th layer.
         for(int i = 0; i < weights.length; i++){
             int cols = layerSizes[i];
-            int rows = layerSizes[i+1];
-            weights[i] = new Array2DRowRealMatrix(rows, cols);
+            int rows = layerSizes[i + 1];
+            weights[i] = new BlockRealMatrix(rows, cols);
             for(int j = 0; j < rows; j++){
                 for(int k = 0; k < cols; k++){
-                    weights[i].setEntry(i, j, Math.random());
+                    weights[i].setEntry(j, k, Math.random());
                 }
             }
         }
@@ -86,10 +92,10 @@ public class Network {
 
         // Convert the data in to matrices we can use
         RealMatrix trainingMatrix, testMatrix;
-        trainingMatrix = new Array2DRowRealMatrix(trainingData.size(),
+        trainingMatrix = new BlockRealMatrix(trainingData.size(),
                 net.layerSizes[0] + 1);
         testMatrix =
-                new Array2DRowRealMatrix(testData.size(), net.layerSizes[0] + 1);
+                new BlockRealMatrix(testData.size(), net.layerSizes[0] + 1);
         convertData(trainingData, trainingLabels, testData, testLabels, trainingMatrix, testMatrix);
 
         // Train the network using the MNIST data.
@@ -154,8 +160,8 @@ public class Network {
 
         // For each layer, calculate a' = σ(wa+b).
         // [The operate() method multiplies the matrix by a given vector.]
-        for(int i = 0; i < numberOfLayers; i++){
-            ret = weights[i].operate(ret).add(biases[i]);
+        for(int i = 1; i < numberOfLayers; i++){
+            ret = weights[i - 1].operate(ret).add(biases[i]);
             ret.walkInOptimizedOrder(visitor);
         }
 
@@ -180,10 +186,10 @@ public class Network {
 
             //Generate the mini batches.
             for (int j = 0; j < miniBatchCount; j++) {
-                int start = j * miniBatchCount;
+                int start = j * miniBatchSize;
                 miniBatches[j] = trainingMatrix.getSubMatrix(
                         start,
-                        start + miniBatchCount - 1,
+                        start + miniBatchSize - 1,
                         0,
                         trainingMatrix.getColumnDimension() - 1
                 );
@@ -238,10 +244,25 @@ public class Network {
         RealMatrix[] nabla_w = new RealMatrix[weights.length];
         RealMatrix[] delta_nabla_w = new RealMatrix[weights.length];
 
-        // Set up the nabla arrays
+        // Set the nablas.
         for(int r = 0; r < biases.length; r++){
             nabla_b[r] =
                     new ArrayRealVector(biases[r].getDimension(), 0.0);
+        }
+        for(int s = 0; s < weights.length; s++){
+            int rows = weights[s].getRowDimension();
+            int cols = weights[s].getColumnDimension();
+
+            nabla_w[s] = new BlockRealMatrix(rows, cols);
+
+            for(int t = 0; t < cols; t++){
+                nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
+            }
+        }
+
+        //Run the backpropagation algorithm for each entry in the batch.
+        // Set/reset the delta_nabla arrays.
+        for(int r = 0; r < biases.length; r++){
             delta_nabla_b[r] =
                     new ArrayRealVector(biases[r].getDimension(), 0.0);
         }
@@ -249,16 +270,13 @@ public class Network {
             int rows = weights[s].getRowDimension();
             int cols = weights[s].getColumnDimension();
 
-            nabla_w[s] = new Array2DRowRealMatrix(rows, cols);
-            delta_nabla_w[s] = new Array2DRowRealMatrix(rows, cols);
+            delta_nabla_w[s] = new BlockRealMatrix(rows, cols);
 
             for(int t = 0; t < cols; t++){
-                nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
                 delta_nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
             }
         }
 
-        //Run the backpropagation algorithm for each entry in the batch.
         for(int i = 0; i < batch.getRowDimension(); i++){
             backpropagation(delta_nabla_b, delta_nabla_w, batch.getRowVector(i));
             for(int j = 0; j < nabla_b.length; j++){
@@ -298,54 +316,46 @@ public class Network {
         RealVector desiredActivations = new ArrayRealVector(10, 0.0);
         desiredActivations.setEntry((int) trainingItem.getEntry(0), 1.0);
 
-        // Reset the deltas
-        // Set up the nabla arrays
-        for(int r = 0; r < biases.length; r++){
-            delta_nabla_b[r] =
-                    new ArrayRealVector(biases[r].getDimension(), 0.0);
-        }
-        for(int s = 0; s < weights.length; s++){
-            int rows = weights[s].getRowDimension();
-            int cols = weights[s].getColumnDimension();
-
-            delta_nabla_w[s] = new Array2DRowRealMatrix(rows, cols);
-
-            for(int t = 0; t < cols; t++){
-                delta_nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
-            }
-        }
-
-        // Local variable setup
+        // Stores the activations for each layer.
         RealVector[] activations = new RealVector[this.numberOfLayers];
         activations[0] = trainingItem.getSubVector(1, trainingItem.getDimension() - 1);
-        RealVector[] weightedInputs = new RealVector[this.numberOfLayers - 1];
+
+        // weightedInputs[i] contains the weighted inputs.
+        RealVector[] weightedInputs = new RealVector[this.numberOfLayers];
+        weightedInputs[0] = activations[0].copy();
+
+        // This is just to save a bit of memory, so we don't have instantiate a
+        // new Visitor every time we need one.
         SigmoidVectorVisitor sigmoidVectorVisitor = new SigmoidVectorVisitor();
         SigmoidPrimeVectorVisitor sigmoidPrimeVectorVisitor = new SigmoidPrimeVectorVisitor();
-        RealVector z;
 
-        // Feed forward
-        for(int i = 0; i < this.numberOfLayers - 1; i++){
-            weightedInputs[i] = weights[i].operate(activations[i]).add(biases[i]);
-            activations[i + 1] = weightedInputs[i];
-            activations[i + 1].walkInOptimizedOrder(sigmoidVectorVisitor);
+        // Temporary vectors for calculating the weightedInputs.
+        RealVector z, delta;
+
+        // Feed the training item forward through the network and store the
+        // weighted inputs and activations at each layer for when we move back
+        // through to calculate the error.
+        for(int i = 1; i < this.numberOfLayers; i++){
+            weightedInputs[i] = weights[i -1].operate(activations[i - 1]).add(biases[i]);
+            activations[i] = weightedInputs[i].copy();
+            activations[i].walkInOptimizedOrder(sigmoidVectorVisitor);
         }
 
-        // Backward pass
-        RealVector sigmoidPrimeWL = weightedInputs[weightedInputs.length - 1];
-        sigmoidPrimeWL.walkInOptimizedOrder(sigmoidPrimeVectorVisitor);
-        RealVector delta =
-                costDerivative(activations[this.numberOfLayers - 1], desiredActivations)
-                        .ebeMultiply(sigmoidPrimeWL);
+        // Calculate the error in the final layer.
+        z = weightedInputs[weightedInputs.length - 1];
+        z.walkInOptimizedOrder(sigmoidPrimeVectorVisitor);
+        delta = costDerivative(activations[this.numberOfLayers - 1], desiredActivations)
+                        .ebeMultiply(z);
         delta_nabla_b[delta_nabla_b.length - 1] = delta.copy();
         delta_nabla_w[delta_nabla_w.length - 1] =
                 delta.outerProduct(activations[this.numberOfLayers - 2]);
 
-        for(int l = this.numberOfLayers - 2; l >= 0; l--){
-            z = weightedInputs[l].copy();
+        for(int l = delta_nabla_w.length - 2; l > 0; l--){
+            z = weightedInputs[l + 1].copy();
             z.walkInOptimizedOrder(sigmoidPrimeVectorVisitor);
             delta = this.weights[l + 1].transpose().operate(delta).ebeMultiply(z);
             delta_nabla_b[l] = delta.copy();
-            delta_nabla_w[l] = delta.outerProduct(activations[l-1]);
+            delta_nabla_w[l] = delta.outerProduct(activations[l]);
         }
     }
 
