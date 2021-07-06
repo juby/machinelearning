@@ -1,25 +1,26 @@
 package net.juby;
 
-import org.apache.commons.math3.linear.RealVectorChangingVisitor;
+import org.apache.commons.math3.FieldElement;
+import org.apache.commons.math3.linear.FieldVectorChangingVisitor;
+import org.apache.commons.math3.util.BigReal;
 
-public class SigmoidVectorVisitor implements RealVectorChangingVisitor {
-
+public class SigmoidVectorVisitor<T extends FieldElement<BigReal>> implements FieldVectorChangingVisitor<T>{
     @Override
-    public void start(int i, int i1, int i2) {
-        //not used
-    }
-
-    protected static double sigmoid(double v) {
-        return 1.0/(1.0 + Math.exp(-v));
+    public void start(int dimension, int start, int end) {
+        // Not used.
     }
 
     @Override
-    public double visit(int i, double v) {
-        return sigmoid(v);
+    public T end() {
+        return null;
     }
 
     @Override
-    public double end() {
-        return 0;
+    public T visit(int index, T value) {
+        return (T) sigmoid((BigReal) value);
+    }
+
+    protected static BigReal sigmoid(BigReal value){
+        return new BigReal(1.0/(1.0 + Math.exp(-value.doubleValue())));
     }
 }
