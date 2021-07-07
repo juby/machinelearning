@@ -18,12 +18,14 @@ public class Network {
     private final int numberOfLayers;
     private final List<FieldVector<BigReal>> biases;
     private final List<FieldMatrix<BigReal>> weights;
+    private final int[] layerSizes;
 
     public Network(int[] layerSizes){
         //Set the number of layers and the size of each layer.
-        numberOfLayers = layerSizes.length;
-        biases = new ArrayList<>(numberOfLayers);
-        weights = new ArrayList<>(numberOfLayers - 1);
+        this.layerSizes = layerSizes.clone();
+        this.numberOfLayers = layerSizes.length;
+        this.biases = new ArrayList<>(numberOfLayers);
+        this.weights = new ArrayList<>(numberOfLayers - 1);
 
         // Initialize the weights and biases.
 
@@ -94,9 +96,9 @@ public class Network {
         // Convert the data in to matrices we can use
         FieldMatrix<BigReal> trainingMatrix, testMatrix;
         trainingMatrix = new BlockFieldMatrix<>(BigReal.ZERO.getField(),
-                trainingData.size(), trainingData.get(0).length * trainingData.get(0)[0].length + 1);
+                trainingData.size(), net.layerSizes[0] + 1);
         testMatrix = new BlockFieldMatrix<>(BigReal.ZERO.getField(),
-                testData.size(), testData.get(0).length * testData.get(0)[0].length + 1);
+                testData.size(), net.layerSizes[0] + 1);
 
         convertData(trainingData, trainingLabels, testData, testLabels, trainingMatrix, testMatrix);
 
@@ -117,6 +119,8 @@ public class Network {
         // following the last entry of the previous row. We do this so we can
         // easily shuffle the rows; later we can use utility methods to extract
         // submatrices in order to do the necessary linear algebra.
+        BigReal entryValue;
+
         for(int i = 0; i < trainingData.size(); i++){
             int[][] tempAry = trainingData.get(i);
             int tempAryRows = tempAry.length;
@@ -124,8 +128,6 @@ public class Network {
 
             for(int j = 0; j < tempAryRows; j++){
                 for(int k = 0; k < tempAryCols + 1; k++){
-                    BigReal entryValue;
-
                     // I don't think that normalizing the entries to be between
                     // 0 and 1 (inclusive) is strictly necessary, but it doesn't
                     // hurt.
@@ -144,8 +146,6 @@ public class Network {
             int tempAryCols = tempAry[0].length;
             for(int j = 0; j < tempAryRows; j++){
                 for(int k = 0; k < tempAryCols + 1; k++){
-                    BigReal entryValue;
-
                     if(k == 0) entryValue = new BigReal(testLabels[k]);
                     else entryValue = new BigReal(tempAry[j][k - 1]/255.0);
 
@@ -325,11 +325,11 @@ public class Network {
         desiredActivations.setEntry((int) trainingItem.getEntry(0).doubleValue(), BigReal.ONE);
 
         // Stores the activations for each layer.
-        List<FieldVector<BigReal>> activations = new ArrayList(this.numberOfLayers);
+        List<FieldVector<BigReal>> activations = new ArrayList<>(this.numberOfLayers);
         activations.set(0, trainingItem.getSubVector(1, trainingItem.getDimension() - 1));
 
         // weightedInputs[i] contains the weighted inputs.
-        List<FieldVector<BigReal>> weightedInputs = new ArrayList(this.numberOfLayers);
+        List<FieldVector<BigReal>> weightedInputs = new ArrayList<>(this.numberOfLayers);
         weightedInputs.set(0, activations.get(0).copy());
 
         // This is just to save a bit of memory, so we don't have instantiate a
@@ -361,7 +361,7 @@ public class Network {
         delta_nabla_w.set(delta_nabla_w.size() - 1,
                 delta.outerProduct(activations.get(this.numberOfLayers - 2)));
 
-        for(int l = delta_nabla_w.size() - 2; l > 0; l--){
+        for(int l = delta_nabla_w.size() - 2; l >= 0; l--){
             z = weightedInputs.get(l + 1).copy();
             ((ArrayFieldVector<BigReal>) z).walkInOptimizedOrder(sigmoidPrimeVectorVisitor);
             delta = this.weights.get(l + 1).transpose().operate(delta).ebeMultiply(z);
