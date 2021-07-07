@@ -13,7 +13,6 @@ public class Network {
     private final int numberOfLayers;
     private final RealVector[] biases;
     private final RealMatrix[] weights;
-    private Random rand;
 
     public Network(int[] layerSizes){
         //Set the number of layers and the size of each layer.
@@ -21,7 +20,7 @@ public class Network {
         numberOfLayers = layerSizes.length;
         biases = new RealVector[numberOfLayers - 1];
         weights = new RealMatrix[numberOfLayers - 1];
-        rand = new Random(System.currentTimeMillis());
+        Random rand = new Random(System.currentTimeMillis());
 
         // Initialize the weights and biases.
 
@@ -123,7 +122,6 @@ public class Network {
 
             for(int j = 0; j < tempAryRows; j++){
                 for(int k = 0; k < tempAryCols; k++){
-                    double entryValue;
                     trainingMatrix.setEntry(i, j*tempAryCols + k + 1, tempAry[j][k]/255.0);
                 }
             }
@@ -135,7 +133,7 @@ public class Network {
             int tempAryRows = tempAry.length;
             int tempAryCols = tempAry[0].length;
 
-            testMatrix.setEntry(i, 0, trainingLabels[i]);
+            testMatrix.setEntry(i, 0, testLabels[i]);
 
             for(int j = 0; j < tempAryRows; j++){
                 for(int k = 0; k < tempAryCols; k++){
