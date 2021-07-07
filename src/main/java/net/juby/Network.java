@@ -18,18 +18,15 @@ public class Network {
         //Set the number of layers and the size of each layer.
         this.layerSizes = layerSizes;
         numberOfLayers = layerSizes.length;
-        biases = new RealVector[numberOfLayers];
+        biases = new RealVector[numberOfLayers - 1];
         weights = new RealMatrix[numberOfLayers - 1];
 
         // Initialize the weights and biases.
 
         // Create the vectors for each layer and initialize with random values.
-        // biases[i] contains the biases for the (i+1)th layer.
-        // We create a vector of biases for the 1st layer (biases[0]) but we
-        // won't actually be using it. It's just there to make things a little
-        // cleaner.
+        // biases[i] contains the biases for the (i+2)th layer.
         for(int i = 0; i < biases.length; i++){
-            int vectorLength = layerSizes[i];
+            int vectorLength = layerSizes[i + 1];
             biases[i] = new ArrayRealVector(vectorLength);
             for(int j = 0; j < vectorLength; j++){
                 biases[i].setEntry(j, Math.random());
@@ -120,17 +117,12 @@ public class Network {
             int tempAryRows = tempAry.length;
             int tempAryCols = tempAry[0].length;
 
+            trainingMatrix.setEntry(i, 0, trainingLabels[i]);
+
             for(int j = 0; j < tempAryRows; j++){
-                for(int k = 0; k < tempAryCols + 1; k++){
+                for(int k = 0; k < tempAryCols; k++){
                     double entryValue;
-
-                    // I don't think that normalizing the entries to be between
-                    // 0 and 1 (inclusive) is strictly necessary, but it doesn't
-                    // hurt.
-                    if(k == 0) entryValue = trainingLabels[k];
-                    else entryValue = tempAry[j][k - 1]/255.0;
-
-                    trainingMatrix.setEntry(i, j*tempAryCols + k, entryValue);
+                    trainingMatrix.setEntry(i, j*tempAryCols + k + 1, tempAry[j][k]/255.0);
                 }
             }
         }
@@ -140,14 +132,12 @@ public class Network {
             int[][] tempAry = testData.get(i);
             int tempAryRows = tempAry.length;
             int tempAryCols = tempAry[0].length;
+
+            testMatrix.setEntry(i, 0, trainingLabels[i]);
+
             for(int j = 0; j < tempAryRows; j++){
-                for(int k = 0; k < tempAryCols + 1; k++){
-                    double entryValue;
-
-                    if(k == 0) entryValue = testLabels[k];
-                    else entryValue = tempAry[j][k - 1]/255.0;
-
-                    testMatrix.setEntry(i, j*tempAryCols + k, entryValue);
+                for(int k = 0; k < tempAryCols; k++){
+                    testMatrix.setEntry(i, j*tempAryCols + k + 1, tempAry[j][k]/255.0);
                 }
             }
         }
@@ -161,7 +151,7 @@ public class Network {
         // For each layer, calculate a' = σ(wa+b).
         // [The operate() method multiplies the matrix by a given vector.]
         for(int i = 1; i < numberOfLayers; i++){
-            ret = weights[i - 1].operate(ret).add(biases[i]);
+            ret = weights[i - 1].operate(ret).add(biases[i - 1]);
             ret.walkInOptimizedOrder(visitor);
         }
 
@@ -336,7 +326,7 @@ public class Network {
         // weighted inputs and activations at each layer for when we move back
         // through to calculate the error.
         for(int i = 1; i < this.numberOfLayers; i++){
-            weightedInputs[i] = weights[i -1].operate(activations[i - 1]).add(biases[i]);
+            weightedInputs[i] = weights[i -1].operate(activations[i - 1]).add(biases[i - 1]);
             activations[i] = weightedInputs[i].copy();
             activations[i].walkInOptimizedOrder(sigmoidVectorVisitor);
         }
@@ -350,7 +340,7 @@ public class Network {
         delta_nabla_w[delta_nabla_w.length - 1] =
                 delta.outerProduct(activations[this.numberOfLayers - 2]);
 
-        for(int l = delta_nabla_w.length - 2; l > 0; l--){
+        for(int l = delta_nabla_w.length - 2; l >= 0; l--){
             z = weightedInputs[l + 1].copy();
             z.walkInOptimizedOrder(sigmoidPrimeVectorVisitor);
             delta = this.weights[l + 1].transpose().operate(delta).ebeMultiply(z);
