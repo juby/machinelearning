@@ -13,6 +13,7 @@ public class Network {
     private final int numberOfLayers;
     private final RealVector[] biases;
     private final RealMatrix[] weights;
+    private Random rand;
 
     public Network(int[] layerSizes){
         //Set the number of layers and the size of each layer.
@@ -20,6 +21,7 @@ public class Network {
         numberOfLayers = layerSizes.length;
         biases = new RealVector[numberOfLayers - 1];
         weights = new RealMatrix[numberOfLayers - 1];
+        rand = new Random(System.currentTimeMillis());
 
         // Initialize the weights and biases.
 
@@ -29,7 +31,7 @@ public class Network {
             int vectorLength = layerSizes[i + 1];
             biases[i] = new ArrayRealVector(vectorLength);
             for(int j = 0; j < vectorLength; j++){
-                biases[i].setEntry(j, Math.random());
+                biases[i].setEntry(j, rand.nextGaussian());
             }
         }
         // Finally create the weights matrices and initialize with random values.
@@ -41,7 +43,7 @@ public class Network {
             weights[i] = new BlockRealMatrix(rows, cols);
             for(int j = 0; j < rows; j++){
                 for(int k = 0; k < cols; k++){
-                    weights[i].setEntry(j, k, Math.random());
+                    weights[i].setEntry(j, k, rand.nextGaussian());
                 }
             }
         }
@@ -251,24 +253,25 @@ public class Network {
         }
 
         //Run the backpropagation algorithm for each entry in the batch.
-        // Set/reset the delta_nabla arrays.
-        for(int r = 0; r < biases.length; r++){
-            delta_nabla_b[r] =
-                    new ArrayRealVector(biases[r].getDimension(), 0.0);
-        }
-        for(int s = 0; s < weights.length; s++){
-            int rows = weights[s].getRowDimension();
-            int cols = weights[s].getColumnDimension();
+         for(int i = 0; i < batch.getRowDimension(); i++){
+             // Set/reset the delta_nabla arrays.
+             for(int r = 0; r < biases.length; r++){
+                 delta_nabla_b[r] =
+                         new ArrayRealVector(biases[r].getDimension(), 0.0);
+             }
+             for(int s = 0; s < weights.length; s++){
+                 int rows = weights[s].getRowDimension();
+                 int cols = weights[s].getColumnDimension();
 
-            delta_nabla_w[s] = new BlockRealMatrix(rows, cols);
+                 delta_nabla_w[s] = new BlockRealMatrix(rows, cols);
 
-            for(int t = 0; t < cols; t++){
-                delta_nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
-            }
-        }
+                 for(int t = 0; t < cols; t++){
+                     delta_nabla_w[s].setColumnVector(t, new ArrayRealVector(rows, 0.0));
+                 }
+             }
 
-        for(int i = 0; i < batch.getRowDimension(); i++){
             backpropagation(delta_nabla_b, delta_nabla_w, batch.getRowVector(i));
+             //todo figure out why these additions aren't working
             for(int j = 0; j < nabla_b.length; j++){
                 nabla_b[j].add(delta_nabla_b[j]);
             }
