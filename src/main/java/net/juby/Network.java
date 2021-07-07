@@ -271,12 +271,11 @@ public class Network {
              }
 
             backpropagation(delta_nabla_b, delta_nabla_w, batch.getRowVector(i));
-             //todo figure out why these additions aren't working
             for(int j = 0; j < nabla_b.length; j++){
-                nabla_b[j].add(delta_nabla_b[j]);
+                nabla_b[j] = nabla_b[j].add(delta_nabla_b[j]);
             }
             for(int k = 0; k < nabla_w.length; k++){
-                nabla_w[k].add(delta_nabla_w[k]);
+                nabla_w[k] = nabla_w[k].add(delta_nabla_w[k]);
             }
         }
 
@@ -285,7 +284,7 @@ public class Network {
             for(int m = 0; m < weights[l].getRowDimension(); m++){
                 for(int n = 0; n < weights[l].getColumnDimension(); n++){
                     double current = weights[l].getEntry(m, n);
-                    double delta = (eta/batch.getRowDimension())*nabla_w[l].getEntry(m, n);
+                    double delta = (eta/batch.getRowDimension()) * nabla_w[l].getEntry(m, n);
                     weights[l].setEntry(m, n, current - delta);
                 }
             }
@@ -329,7 +328,7 @@ public class Network {
         // weighted inputs and activations at each layer for when we move back
         // through to calculate the error.
         for(int i = 1; i < this.numberOfLayers; i++){
-            weightedInputs[i] = weights[i -1].operate(activations[i - 1]).add(biases[i - 1]);
+            weightedInputs[i] = weights[i - 1].operate(activations[i - 1]).add(biases[i - 1]);
             activations[i] = weightedInputs[i].copy();
             activations[i].walkInOptimizedOrder(sigmoidVectorVisitor);
         }
