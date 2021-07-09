@@ -1,5 +1,7 @@
 package net.juby.mnist;
 
+import net.juby.exceptions.MalformedInputDataException;
+
 import static java.lang.String.format;
 
 import java.io.ByteArrayOutputStream;
@@ -9,10 +11,21 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Provides tools for reading data from the
+ * <a href="http://yann.lecun.com/exdb/mnist/">MNIST database</a>.
+ * Code originally by
+ * <a href="https://github.com/jeffgriffith/mnist-reader">Jeff Griffith</a>.
+ */
 public class MnistReader {
 	private static final int LABEL_FILE_MAGIC_NUMBER = 2049;
 	private static final int IMAGE_FILE_MAGIC_NUMBER = 2051;
 
+	/**
+	 * Extracts the desired outputs for test or training cases from the MNIST data.
+	 * @param infile the file location of the MNIST data
+	 * @return an array of the desired outputs
+	 */
 	public static int[] getLabels(String infile) {
 
 		ByteBuffer bb = loadFileToByteBuffer(infile);
@@ -28,6 +41,11 @@ public class MnistReader {
 		return labels;
 	}
 
+	/**
+	 * Extracts the pixel data for test or training cases from the MNIST data.
+	 * @param infile the file location of the MNIST data
+	 * @return a List of two dimensional integer arrays holding the pixel values
+	 */
 	public static List<int[][]> getImages(String infile) {
 		ByteBuffer bb = loadFileToByteBuffer(infile);
 
@@ -44,6 +62,13 @@ public class MnistReader {
 		return images;
 	}
 
+	/**
+	 * Extracts the pixel information for a single image.
+	 * @param numRows the number of rows in the image
+	 * @param numCols the number of columns in the image
+	 * @param bb the raw data for an image
+	 * @return a two dimensional array holding the pixel information for the image
+	 */
 	private static int[][] readImage(int numRows, int numCols, ByteBuffer bb) {
 		int[][] image = new int[numRows][];
 		for (int row = 0; row < numRows; row++)
@@ -51,6 +76,12 @@ public class MnistReader {
 		return image;
 	}
 
+	/**
+	 * Extracts the pixel information for a single row of an image.
+	 * @param numCols the number of pixels in the row
+	 * @param bb the raw data for the row
+	 * @return an array holding the pixel information for the row
+	 */
 	private static int[] readRow(int numCols, ByteBuffer bb) {
 		int[] row = new int[numCols];
 		for (int col = 0; col < numCols; ++col)
@@ -58,6 +89,11 @@ public class MnistReader {
 		return row;
 	}
 
+	/**
+	 * A sanity check to ensure that the MNIST file used is the correct data.
+	 * @param expectedMagicNumber the identifier for the file intended to be used
+	 * @param magicNumber the identifier extracted from the MNIST file that is used
+	 */
 	private static void assertMagicNumber(int expectedMagicNumber, int magicNumber) {
 		if (expectedMagicNumber != magicNumber) {
 			switch (expectedMagicNumber) {
@@ -66,17 +102,22 @@ public class MnistReader {
 			case IMAGE_FILE_MAGIC_NUMBER:
 				throw new RuntimeException("This is not an image file.");
 			default:
-				throw new RuntimeException(
+				throw new MalformedInputDataException(
 						format("Expected magic number %d, found %d", expectedMagicNumber, magicNumber));
 			}
 		}
 	}
 
-	/*******
+	/*
 	 * Just very ugly utilities below here. Best not to subject yourself to
 	 * them. ;-)
-	 ******/
+	 */
 
+	/**
+	 * Converts the MNIST file into a format more easily used by the tools.
+	 * @param infile the file location of the MNIST data
+	 * @return the converted MNIST data
+	 */
 	private static ByteBuffer loadFileToByteBuffer(String infile) {
 		return ByteBuffer.wrap(loadFile(infile));
 	}
@@ -100,6 +141,11 @@ public class MnistReader {
 		}
 	}
 
+	/**
+	 * Generates ASCII art of an MNIST image.
+	 * @param image a two dimensional array of pixel values for an MNIST image
+	 * @return the ASCII art of the image
+	 */
 	private static String renderImage(int[][] image) {
 		StringBuilder sb = new StringBuilder();
 
@@ -118,13 +164,6 @@ public class MnistReader {
 			sb.append("|\n");
 		}
 
-		return sb.toString();
-	}
-
-	private static String repeat(String s, int n) {
-		StringBuilder sb = new StringBuilder();
-		for (int i = 0; i < n; i++)
-			sb.append(s);
 		return sb.toString();
 	}
 }

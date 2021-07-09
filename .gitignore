@@ -1,6 +1,7 @@
 /.idea/
 machinelearning.iml
 /mnist_data/
+/javadoc/
 
 #Everything below this comes from Jeff Griffith's MNIST reader
 #His GitHub: https://github.com/jeffgriffith

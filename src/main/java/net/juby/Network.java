@@ -7,13 +7,24 @@ import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
 import net.juby.exceptions.MalformedInputDataException;
 import net.juby.mnist.MnistReader;
 
-
+/**
+ * A neural network that trains and identifies handwritten digits using the
+ * <a href="http://yann.lecun.com/exdb/mnist/">MNIST database</a>.
+ *
+ * @author Andrew Juby (jubydoo AT gmail DOT com)
+ * @version 1.0, 07/07/2021
+ *
+ */
 public class Network {
     private final int[] layerSizes;
     private final int numberOfLayers;
     private final RealVector[] biases;
     private final RealMatrix[] weights;
 
+    /**
+     * Initializes a new neural network.
+     * @param layerSizes array of the number of neurons in each layer
+     */
     public Network(int[] layerSizes){
         //Set the number of layers and the size of each layer.
         this.layerSizes = layerSizes;
@@ -48,13 +59,13 @@ public class Network {
         }
     }
 
-    /*
-     * Run the program with a list of the number of neurons in each layer, for
+    /**
+     * Runs the program with a list of the number of neurons in each layer, for
      * example
-     *      java Network 784 30 10
+     * <code>java Network 784 30 10</code>
      * creates a neural network with 784 neurons in the input layer, 30 in a
      * single hidden layer, and 10 in the output layer.
-     * @param args Command line arguments
+     * @param args list of neurons in each layer
      */
     public static void main(String[] args){
         // For now, I'm hardcoding these values. Down the line I'll rework the
@@ -101,6 +112,20 @@ public class Network {
                 epochs, miniBatchSize, eta);
     }
 
+    /**
+     * Converts the data as read by {@link MnistReader} into {@link RealMatrix}
+     * objects. Each row in the resulting matrix contains data for one image,
+     * where the first position contains the correct identification for that image
+     * and the remainder are the greyscale pixel values, with the sequential
+     * rows one after another.
+     *
+     * @param trainingData a List of integer arrays, each array contains the grayscale values for each pixel in a training image
+     * @param trainingLabels the correct identification for each training example
+     * @param testData a List of integer arrays, each array contains the grayscale values for each pixel in a testing image
+     * @param testLabels the correct identification for each testing example
+     * @param trainingMatrix the RealMatrix that holds the converted training data
+     * @param testMatrix the RealMatrix that holds the converted testing data
+     */
     private static void convertData(List<int[][]> trainingData,
                              int[] trainingLabels,
                              List<int[][]> testData,
@@ -143,6 +168,12 @@ public class Network {
         }
     }
 
+    /**
+     * Takes a {@link RealVector} as input to the network and processes it.
+     *
+     * @param input the RealVector that has the values for the input neurons.
+     * @return a value corresponding to the neuron with the highest activation on the output layer
+     */
     private RealVector feedForward(RealVector input){
         // The first layer is the input layer.
         RealVector ret = new ArrayRealVector(input);
@@ -159,6 +190,17 @@ public class Network {
         return ret;
     }
 
+    /**
+     * The main workhorse of the class. This method takes in training and test
+     * data, along with the hyper-parameters. It trains the network then runs the
+     * testing data, printing the results to the command line.
+     *
+     * @param trainingMatrix a RealMatrix of the training data
+     * @param testMatrix a RealMatrix of the testing data
+     * @param epochs the number of training/testing iterations to be run
+     * @param miniBatchSize the number of training items per batch
+     * @param eta the learning rate
+     */
     private void stochasticGradientDescent(RealMatrix trainingMatrix,
                                           RealMatrix testMatrix,
                                           int epochs,
@@ -197,9 +239,12 @@ public class Network {
         }
     }
 
-    // Runs test data through the network and identifies the number of correct
-    // answers, 'correct' being that the neuron corresponding to the desired
-    // result has the highest activation
+    /** Runs test data through the network and identifies the number of correct
+     * answers, 'correct' being that the neuron corresponding to the desired
+     * result has the highest activation
+     *
+     * @param testData a RealMatrix of test cases
+     */
     private int evaluate(RealMatrix testData) {
         int total, targetValue, resultValue;
         total = 0;
@@ -222,10 +267,13 @@ public class Network {
         return total;
     }
 
-    // From the sample code in the textbook:
-    // Update the network's weights and biases by applying gradient descent
-    // using backpropagation to a single mini batch. The "batch" is a list of
-    // tuples "(x, y)", and "eta" is the learning rate.
+    /**
+     * Takes a batch of training examples and uses them to update the weights
+     * and biases of the network.
+     *
+     * @param batch a RealMatrix of training examples
+     * @param eta the learning rate
+     */
     private void updateMiniBatch(RealMatrix batch, double eta) {
         // These are the vectors and matrices that will store the changes to the
         // weights and biases during each epoch.
@@ -298,6 +346,16 @@ public class Network {
         }
     }
 
+    /**
+     * Calculates the changes to the network's weights and biases based on a
+     * single training example.
+     *
+     * @param delta_nabla_b an empty RealVector array for storing the changes to
+     *                      the biases
+     * @param delta_nabla_w an empty RealMatrix array for storing the changes to
+     *                      the weights
+     * @param trainingItem a RealVector storing a single training example
+     */
     private void backpropagation(RealVector[] delta_nabla_b,
                                  RealMatrix[] delta_nabla_w,
                                  RealVector trainingItem) {
@@ -349,6 +407,16 @@ public class Network {
         }
     }
 
+    /**
+     * Calculates the derivative of the cost function.
+     * @param outputActivations a RealVector of the output layer for a single
+     *                          training example
+     * @param desiredActivations a RealVector of the desired activations for the
+     *                           output layer; essentially all zeroes except for
+     *                           the 'correct' answer, which should have a value
+     *                           of 1
+     * @return a RealVector of the values of the derivative of the cost function
+     */
     private static RealVector costDerivative(RealVector outputActivations, RealVector desiredActivations){
         return outputActivations.subtract(desiredActivations);
     }
