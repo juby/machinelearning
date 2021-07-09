@@ -122,6 +122,11 @@ public class MnistReader {
 		return ByteBuffer.wrap(loadFile(infile));
 	}
 
+	/**
+	 * Converts an MNIST file into an array of bytes.
+	 * @param infile the file location of the MNIST data
+	 * @return the converted MNIST data
+	 */
 	private static byte[] loadFile(String infile) {
 		try {
 			RandomAccessFile f = new RandomAccessFile(infile, "r");
