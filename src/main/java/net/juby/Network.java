@@ -1,18 +1,18 @@
 package net.juby;
 
 import java.util.*;
-
+import net.juby.visitors.*;
 import org.apache.commons.math3.linear.*;
 import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
-import net.juby.exceptions.MalformedInputDataException;
-import net.juby.mnist.MnistReader;
+import net.juby.exceptions.*;
+import net.juby.mnist.*;
 
 /**
  * A neural network that trains and identifies handwritten digits using the
  * <a href="http://yann.lecun.com/exdb/mnist/">MNIST database</a>.
  *
  * @author Andrew Juby (jubydoo AT gmail DOT com)
- * @version 1.0, 07/07/2021
+ * @version 1.0.2, 07/09/2021
  *
  */
 public class Network {
@@ -282,6 +282,11 @@ public class Network {
         RealMatrix[] nabla_w = new RealMatrix[weights.length];
         RealMatrix[] delta_nabla_w = new RealMatrix[weights.length];
 
+        //Weights and biases updaters
+        UpdateWeightsVisitor updateWeightsVisitor;
+        UpdateBiasesVisitor updateBiasesVisitor;
+
+
         // Set the nablas.
         for(int r = 0; r < biases.length; r++){
             nabla_b[r] =
@@ -327,22 +332,14 @@ public class Network {
 
         //Update the weights matrices.
         for(int l = 0; l < weights.length; l++){
-            for(int m = 0; m < weights[l].getRowDimension(); m++){
-                for(int n = 0; n < weights[l].getColumnDimension(); n++){
-                    double current = weights[l].getEntry(m, n);
-                    double delta = (eta/batch.getRowDimension()) * nabla_w[l].getEntry(m, n);
-                    weights[l].setEntry(m, n, current - delta);
-                }
-            }
+            updateWeightsVisitor = new UpdateWeightsVisitor(eta, batch.getRowDimension(), nabla_w[l]);
+            weights[l].walkInOptimizedOrder(updateWeightsVisitor);
         }
 
         //Update the bias vectors.
         for(int p = 0; p < biases.length; p++){
-            for(int q = 0; q < biases[p].getDimension(); q++){
-                double current = biases[p].getEntry(q);
-                double delta = (eta/batch.getRowDimension()) * nabla_b[p].getEntry(q);
-                biases[p].setEntry(q, current - delta);
-            }
+            updateBiasesVisitor = new UpdateBiasesVisitor(eta, batch.getRowDimension(), nabla_b[p]);
+            biases[p].walkInOptimizedOrder(updateBiasesVisitor);
         }
     }
 

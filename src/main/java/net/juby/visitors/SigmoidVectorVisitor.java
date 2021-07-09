@@ -1,4 +1,4 @@
-package net.juby;
+package net.juby.visitors;
 
 import org.apache.commons.math3.linear.RealVectorChangingVisitor;
 

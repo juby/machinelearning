@@ -1,7 +1,7 @@
-package net.juby;
+package net.juby.visitors;
 
 import org.apache.commons.math3.linear.RealVectorChangingVisitor;
-import static net.juby.SigmoidVectorVisitor.sigmoid;
+import static net.juby.visitors.SigmoidVectorVisitor.sigmoid;
 
 /**
  * Applies the first derivative of the sigmoid function to a
