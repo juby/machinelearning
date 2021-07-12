@@ -1,6 +1,8 @@
 package net.juby.neuralnet;
 
 import java.util.*;
+
+import net.juby.costFunctions.*;
 import net.juby.visitors.*;
 import org.apache.commons.math3.linear.*;
 import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
@@ -20,6 +22,7 @@ public class Network {
     private final int numberOfLayers;
     private final RealVector[] biases;
     private final RealMatrix[] weights;
+    private final CostFunction costFunction;
 
     /**
      * Initializes a new neural network.
@@ -28,9 +31,10 @@ public class Network {
     public Network(int[] layerSizes){
         //Set the number of layers and the size of each layer.
         this.layerSizes = layerSizes;
-        numberOfLayers = layerSizes.length;
-        biases = new RealVector[numberOfLayers - 1];
-        weights = new RealMatrix[numberOfLayers - 1];
+        this.numberOfLayers = layerSizes.length;
+        this.biases = new RealVector[numberOfLayers - 1];
+        this.weights = new RealMatrix[numberOfLayers - 1];
+        this.costFunction = new QuadraticCost();
         Random rand = new Random(System.currentTimeMillis());
 
         // Initialize the weights and biases.
@@ -389,8 +393,7 @@ public class Network {
         // Calculate the error in the final layer.
         z = weightedInputs[weightedInputs.length - 1];
         z.walkInOptimizedOrder(sigmoidPrimeVectorVisitor);
-        delta = costDerivative(activations[this.numberOfLayers - 1], desiredActivations)
-                        .ebeMultiply(z);
+        delta = costFunction.delta(activations[this.numberOfLayers - 1], desiredActivations, z);
         delta_nabla_b[delta_nabla_b.length - 1] = delta.copy();
         delta_nabla_w[delta_nabla_w.length - 1] =
                 delta.outerProduct(activations[this.numberOfLayers - 2]);
