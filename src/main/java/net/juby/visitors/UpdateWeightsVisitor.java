@@ -4,9 +4,9 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealMatrixChangingVisitor;
 
 public class UpdateWeightsVisitor implements RealMatrixChangingVisitor {
-    private double eta;
-    private int batchSize;
-    private RealMatrix nabla_w;
+    private final double eta;
+    private final int batchSize;
+    private final RealMatrix nabla_w;
 
     public UpdateWeightsVisitor(double eta, int batchSize, RealMatrix nabla_w){
         this.eta = eta;
