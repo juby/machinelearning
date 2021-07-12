@@ -1,4 +1,4 @@
-package net.juby;
+package net.juby.neuralnet;
 
 import java.util.*;
 import net.juby.visitors.*;
