@@ -406,18 +406,4 @@ public class Network {
             delta_nabla_w[l] = delta.outerProduct(activations[l]);
         }
     }
-
-    /**
-     * Calculates the derivative of the cost function.
-     * @param outputActivations a RealVector of the output layer for a single
-     *                          training example
-     * @param desiredActivations a RealVector of the desired activations for the
-     *                           output layer; essentially all zeroes except for
-     *                           the 'correct' answer, which should have a value
-     *                           of 1
-     * @return a RealVector of the values of the derivative of the cost function
-     */
-    private static RealVector costDerivative(RealVector outputActivations, RealVector desiredActivations){
-        return outputActivations.subtract(desiredActivations);
-    }
 }
