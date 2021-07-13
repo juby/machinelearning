@@ -2,9 +2,9 @@ package net.juby.neuralnet;
 
 import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
 
-import net.juby.costFunctions.*;
-import net.juby.mnist.MnistReader;
-import net.juby.visitors.*;
+import net.juby.neuralnet.costFunctions.*;
+import net.juby.neuralnet.mnist.MnistReader;
+import net.juby.neuralnet.visitors.*;
 
 import org.apache.commons.cli.*;
 import org.apache.commons.math3.linear.*;

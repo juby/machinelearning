@@ -1,4 +1,4 @@
-package net.juby.costFunctions;
+package net.juby.neuralnet.costFunctions;
 
 import org.apache.commons.math3.linear.RealVector;
 
@@ -12,7 +12,7 @@ public interface CostFunction {
      * @param desiredActivations the desired activations in the output layer
      * @return the cost of the given activations
      */
-    public double cost(RealVector outputActivations, RealVector desiredActivations);
+    double cost(RealVector outputActivations, RealVector desiredActivations);
 
     /**
      * Calculates the gradient of the cost function.
@@ -21,5 +21,5 @@ public interface CostFunction {
      * @param finalLayerWeightedInput the weighted input for a particular training case
      * @return the gradient values for a particular training case
      */
-    public RealVector delta(RealVector outputActivations, RealVector desiredActivations, RealVector finalLayerWeightedInput);
+    RealVector delta(RealVector outputActivations, RealVector desiredActivations, RealVector finalLayerWeightedInput);
 }

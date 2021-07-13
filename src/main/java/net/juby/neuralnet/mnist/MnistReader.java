@@ -1,4 +1,4 @@
-package net.juby.mnist;
+package net.juby.neuralnet.mnist;
 
 import net.juby.exceptions.MalformedInputDataException;
 

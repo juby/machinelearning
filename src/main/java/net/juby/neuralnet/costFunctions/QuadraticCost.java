@@ -1,6 +1,6 @@
-package net.juby.costFunctions;
+package net.juby.neuralnet.costFunctions;
 
-import net.juby.visitors.SigmoidPrimeVectorVisitor;
+import net.juby.neuralnet.visitors.SigmoidPrimeVectorVisitor;
 import org.apache.commons.math3.linear.RealVector;
 
 /**

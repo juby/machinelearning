@@ -1,4 +1,4 @@
-package net.juby.visitors;
+package net.juby.neuralnet.visitors;
 
 import net.juby.neuralnet.Network;
 import org.apache.commons.math3.linear.RealVector;

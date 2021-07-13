@@ -1,4 +1,4 @@
-package net.juby.costFunctions;
+package net.juby.neuralnet.costFunctions;
 
 import org.apache.commons.math3.analysis.function.Log;
 import org.apache.commons.math3.linear.*;
