@@ -16,7 +16,7 @@ import java.util.*;
  * <a href="http://yann.lecun.com/exdb/mnist/">MNIST database</a>.
  *
  * @author Andrew Juby (jubydoo AT gmail DOT com)
- * @version 1.0.2, 07/09/2021
+ * @version 2.0 7/13/2021
  *
  */
 public class Network {
