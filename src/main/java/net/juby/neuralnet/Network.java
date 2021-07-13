@@ -1,13 +1,15 @@
 package net.juby.neuralnet;
 
-import java.util.*;
+import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
 
 import net.juby.costFunctions.*;
+import net.juby.mnist.MnistReader;
 import net.juby.visitors.*;
+
+import org.apache.commons.cli.*;
 import org.apache.commons.math3.linear.*;
-import com.vsthost.rnd.commons.math.ext.linear.EMatrixUtils;
-import net.juby.exceptions.*;
-import net.juby.mnist.*;
+
+import java.util.*;
 
 /**
  * A neural network that trains and identifies handwritten digits using the
@@ -25,17 +27,19 @@ public class Network {
     private final CostFunction costFunction;
 
     /**
-     * Initializes a new neural network.
+     * Initializes a new neural network with a specified cost function.
      * @param layerSizes array of the number of neurons in each layer
+     * @param costFunction the {@link CostFunction} to be used
      */
-    public Network(int[] layerSizes){
+    public Network(int[] layerSizes, CostFunction costFunction){
+
         //Set the number of layers and the size of each layer.
         this.layerSizes = layerSizes;
         this.numberOfLayers = layerSizes.length;
         this.biases = new RealVector[numberOfLayers - 1];
         this.weights = new RealMatrix[numberOfLayers - 1];
-        this.costFunction = new QuadraticCost();
         Random rand = new Random(System.currentTimeMillis());
+        this.costFunction = costFunction;
 
         // Initialize the weights and biases.
 
@@ -48,7 +52,7 @@ public class Network {
                 biases[i].setEntry(j, rand.nextGaussian());
             }
         }
-        // Finally create the weights matrices and initialize with random values.
+        // Create the weights matrices and initialize with random values.
         // weights[i] contains the weights connecting the (i+1)th layer to the
         // (i+2)th layer.
         for(int i = 0; i < weights.length; i++){
@@ -64,30 +68,53 @@ public class Network {
     }
 
     /**
-     * Runs the program with a list of the number of neurons in each layer, for
-     * example
-     * <code>java Network 784 30 10</code>
-     * creates a neural network with 784 neurons in the input layer, 30 in a
-     * single hidden layer, and 10 in the output layer.
-     * @param args list of neurons in each layer
+     * Trains and tests the neural network.
+     * @param args command line arguments (run "java Network -h" for details)
      */
     public static void main(String[] args){
-        // For now, I'm hardcoding these values. Down the line I'll rework the
-        // main method to allow these values to be specified from the command
-        // line.
-        // todo Make command line arguments more flexible
+        // Network variable setup and initialization with default values.
+        int[] values = new int[]{784, 30, 10};
         int epochs = 30;
         int miniBatchSize = 10;
         double eta = 3.0;
+        CostFunction costFunction = new QuadraticCost();
 
-        // Extract the layer sizes from the command line.
-        int[] values;
+        // CLI parser variable setup.
+        Options commandLineOptions = getCommandLineOptions();
+        CommandLineParser parser = new DefaultParser();
+        HelpFormatter help = new HelpFormatter();
+
+        // Parse the command line arguments.
         try{
-            values = Arrays.stream(args).mapToInt(Integer::parseInt).toArray();
-        } catch (NumberFormatException e){
-            throw new MalformedInputDataException("The list of neuron counts "+
-                    "contains a value which is not a number.");
+            CommandLine line = parser.parse(commandLineOptions, args);
+
+            if(line.hasOption("h")){
+                help.printHelp("java Network", getCommandLineOptions(), true);
+                System.exit(0);
+            }
+            if(line.hasOption("e")){
+                epochs = Integer.parseInt(line.getOptionValue("e"));
+            }
+            if(line.hasOption("b")){
+                miniBatchSize = Integer.parseInt(line.getOptionValue("b"));
+            }
+            if(line.hasOption("t")){
+                eta = Double.parseDouble(line.getOptionValue("t"));
+            }
+            if(line.hasOption("c")){
+                costFunction = new CrossEntropyCost();
+            }
+            if(line.hasOption("l")){
+                values = Arrays.stream(line.getOptionValues("l")).mapToInt(Integer::parseInt).toArray();
+            }
+        }catch (ParseException | NumberFormatException e){
+            System.err.println(e.getMessage());
+            help.printHelp("java Network", getCommandLineOptions(), true);
+            System.exit(1);
         }
+
+        // Generate the neural network.
+        Network net = new Network(values, costFunction);
 
         // Extract the MNIST data.
         int[] trainingLabels = MnistReader.getLabels("D:\\Documents\\Projects"+
@@ -100,10 +127,7 @@ public class Network {
         List<int[][]> testData = MnistReader.getImages("D:\\Documents"+
                 "\\Projects\\machinelearning\\mnist_data\\t10k-images.idx3-ubyte");
 
-        // Generate the neural network.
-        Network net = new Network(values);
-
-        // Convert the data in to matrices we can use
+        // Convert the data into matrices we can use.
         RealMatrix trainingMatrix, testMatrix;
         trainingMatrix = new BlockRealMatrix(trainingData.size(),
                 net.layerSizes[0] + 1);
@@ -114,6 +138,66 @@ public class Network {
         // Train the network using the MNIST data.
         net.stochasticGradientDescent(trainingMatrix, testMatrix,
                 epochs, miniBatchSize, eta);
+    }
+
+    /**
+     * Generates the set of command line flags.
+     * @return {@link Options} for the command line
+     */
+    private static Options getCommandLineOptions(){
+        Options commandLineOptions = new Options();
+        commandLineOptions.addOption(Option
+                .builder("h")
+                .longOpt("help")
+                .desc("print this message")
+                .hasArg(false)
+                .build()
+        );
+
+        commandLineOptions.addOption(Option
+                .builder("c")
+                .longOpt("cross-entropy")
+                .desc("use the cross-entropy cost function (instead of the default quadratic function")
+                .hasArg(false)
+                .build()
+        );
+
+        commandLineOptions.addOption(Option
+                .builder("e")
+                .longOpt("epochs")
+                .desc("number of epochs to train")
+                .hasArg()
+                .argName("value")
+                .valueSeparator()
+                .build()
+        );
+        commandLineOptions.addOption(Option
+                .builder("b")
+                .longOpt("batch-size")
+                .desc("number of cases per training batch")
+                .hasArg()
+                .argName("value")
+                .valueSeparator()
+                .build()
+        );
+        commandLineOptions.addOption(Option
+                .builder("t")
+                .longOpt("eta")
+                .desc("learning rate")
+                .hasArg()
+                .argName("value")
+                .valueSeparator()
+                .build()
+        );
+        commandLineOptions.addOption(Option
+                .builder("l")
+                .longOpt("layers")
+                .desc("number of neurons in each layer")
+                .hasArgs()
+                .argName("values")
+                .build()
+        );
+        return commandLineOptions;
     }
 
     /**
