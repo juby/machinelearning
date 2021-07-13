@@ -31,7 +31,7 @@ public class Network {
      * @param layerSizes array of the number of neurons in each layer
      * @param costFunction the {@link CostFunction} to be used
      */
-    public Network(int[] layerSizes, CostFunction costFunction){
+    private Network(int[] layerSizes, CostFunction costFunction){
 
         //Set the number of layers and the size of each layer.
         this.layerSizes = layerSizes;
@@ -79,6 +79,16 @@ public class Network {
         double eta = 3.0;
         CostFunction costFunction = new QuadraticCost();
 
+        String trainingLabelsFileLocation = "D:\\Documents\\Projects\\machinelearning\\mnist_data\\train-labels.idx1-ubyte";
+        String trainingDataFileLocation = "D:\\Documents\\Projects\\machinelearning\\mnist_data\\train-images.idx3-ubyte";
+        String testLabelsFileLocation = "D:\\Documents\\Projects\\machinelearning\\mnist_data\\t10k-labels.idx1-ubyte";
+        String testDataFileLocation = "D:\\Documents\\Projects\\machinelearning\\mnist_data\\t10k-images.idx3-ubyte";
+
+        int[] trainingLabels;
+        int[] testLabels;
+        List<int[][]> trainingData;
+        List<int[][]> testData;
+
         // CLI parser variable setup.
         Options commandLineOptions = getCommandLineOptions();
         CommandLineParser parser = new DefaultParser();
@@ -107,7 +117,20 @@ public class Network {
             if(line.hasOption("l")){
                 values = Arrays.stream(line.getOptionValues("l")).mapToInt(Integer::parseInt).toArray();
             }
+            if(line.hasOption("test-data")){
+                testDataFileLocation = line.getOptionValue("test-data");
+            }
+            if(line.hasOption("test-labels")){
+                testLabelsFileLocation = line.getOptionValue("test-labels");
+            }
+            if(line.hasOption("training-data")){
+                trainingDataFileLocation = line.getOptionValue("training-data");
+            }
+            if(line.hasOption("training-labels")){
+                trainingLabelsFileLocation = line.getOptionValue("training-labels");
+            }
         }catch (ParseException | NumberFormatException e){
+            System.err.println(e.getClass().getSimpleName());
             System.err.println(e.getMessage());
             help.printHelp("java Network", getCommandLineOptions(), true);
             System.exit(1);
@@ -117,15 +140,10 @@ public class Network {
         Network net = new Network(values, costFunction);
 
         // Extract the MNIST data.
-        int[] trainingLabels = MnistReader.getLabels("D:\\Documents\\Projects"+
-                "\\machinelearning\\mnist_data\\train-labels.idx1-ubyte");
-        List<int[][]> trainingData = MnistReader.getImages("D:\\Documents"+
-                "\\Projects\\machinelearning\\mnist_data\\train-images.idx3-ubyte");
-
-        int[] testLabels = MnistReader.getLabels("D:\\Documents\\Projects"+
-                "\\machinelearning\\mnist_data\\t10k-labels.idx1-ubyte");
-        List<int[][]> testData = MnistReader.getImages("D:\\Documents"+
-                "\\Projects\\machinelearning\\mnist_data\\t10k-images.idx3-ubyte");
+        trainingLabels = MnistReader.getLabels(trainingLabelsFileLocation);
+        trainingData = MnistReader.getImages(trainingDataFileLocation);
+        testLabels = MnistReader.getLabels(testLabelsFileLocation);
+        testData = MnistReader.getImages(testDataFileLocation);
 
         // Convert the data into matrices we can use.
         RealMatrix trainingMatrix, testMatrix;
@@ -157,7 +175,7 @@ public class Network {
         commandLineOptions.addOption(Option
                 .builder("c")
                 .longOpt("cross-entropy")
-                .desc("use the cross-entropy cost function (instead of the default quadratic function")
+                .desc("use the cross-entropy cost function (instead of the default quadratic function)")
                 .hasArg(false)
                 .build()
         );
@@ -195,6 +213,38 @@ public class Network {
                 .desc("number of neurons in each layer")
                 .hasArgs()
                 .argName("values")
+                .build()
+        );
+        commandLineOptions.addOption(Option
+                .builder()
+                .longOpt("training-labels")
+                .desc("file location of labels for training data")
+                .hasArg()
+                .argName("FILE")
+                .build()
+        );
+        commandLineOptions.addOption(Option
+                .builder()
+                .longOpt("training-data")
+                .desc("file location of training data")
+                .hasArg()
+                .argName("FILE")
+                .build()
+        );
+        commandLineOptions.addOption(Option
+                .builder()
+                .longOpt("test-labels")
+                .desc("file location of labels for testing data")
+                .hasArg()
+                .argName("FILE")
+                .build()
+        );
+        commandLineOptions.addOption(Option
+                .builder()
+                .longOpt("test-data")
+                .desc("file location of testing data")
+                .hasArg()
+                .argName("FILE")
                 .build()
         );
         return commandLineOptions;
