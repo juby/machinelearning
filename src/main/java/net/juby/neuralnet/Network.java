@@ -7,9 +7,11 @@ import net.juby.neuralnet.mnist.MnistReader;
 import net.juby.neuralnet.visitors.*;
 
 import org.apache.commons.cli.*;
+import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.math3.linear.*;
 
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A neural network that trains and identifies handwritten digits using the
@@ -79,15 +81,19 @@ public class Network {
         double eta = 3.0;
         CostFunction costFunction = new QuadraticCost();
 
-        String trainingLabelsFileLocation = "D:\\Documents\\Projects\\machinelearning\\mnist_data\\train-labels.idx1-ubyte";
-        String trainingDataFileLocation = "D:\\Documents\\Projects\\machinelearning\\mnist_data\\train-images.idx3-ubyte";
-        String testLabelsFileLocation = "D:\\Documents\\Projects\\machinelearning\\mnist_data\\t10k-labels.idx1-ubyte";
-        String testDataFileLocation = "D:\\Documents\\Projects\\machinelearning\\mnist_data\\t10k-images.idx3-ubyte";
+        String dataFolder = "C:\\Users\\jubyd\\Projects\\machinelearning\\";
+
+        String trainingLabelsFileLocation = dataFolder + "mnist_data\\train-labels.idx1-ubyte";
+        String trainingDataFileLocation = dataFolder + "mnist_data\\train-images.idx3-ubyte";
+        String testLabelsFileLocation = dataFolder + "mnist_data\\t10k-labels.idx1-ubyte";
+        String testDataFileLocation = dataFolder + "mnist_data\\t10k-images.idx3-ubyte";
 
         int[] trainingLabels;
         int[] testLabels;
         List<int[][]> trainingData;
         List<int[][]> testData;
+
+        StopWatch stopWatch = null;
 
         // CLI parser variable setup.
         Options commandLineOptions = getCommandLineOptions();
@@ -116,6 +122,10 @@ public class Network {
             }
             if(line.hasOption("l")){
                 values = Arrays.stream(line.getOptionValues("l")).mapToInt(Integer::parseInt).toArray();
+            }
+            if(line.hasOption("s")){
+                stopWatch = new StopWatch();
+                stopWatch.start();
             }
             if(line.hasOption("test-data")){
                 testDataFileLocation = line.getOptionValue("test-data");
@@ -156,6 +166,12 @@ public class Network {
         // Train the network using the MNIST data.
         net.stochasticGradientDescent(trainingMatrix, testMatrix,
                 epochs, miniBatchSize, eta);
+
+        if(stopWatch != null){
+            stopWatch.stop();
+            long seconds = stopWatch.getTime(TimeUnit.SECONDS);
+            System.out.println("Time elapsed: " + seconds + " seconds.");
+        }
     }
 
     /**
@@ -215,6 +231,12 @@ public class Network {
                 .argName("values")
                 .build()
         );
+        commandLineOptions.addOption(Option
+                .builder("s")
+                .longOpt("stopwatch")
+                .desc("runs a stopwatch and reports runtime at the end of the program")
+                .hasArg(false)
+                .build());
         commandLineOptions.addOption(Option
                 .builder()
                 .longOpt("training-labels")
