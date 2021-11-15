@@ -57,5 +57,15 @@
       <artifactId>commons-lang3</artifactId>
       <version>3.12.0</version>
     </dependency>
+    <dependency>
+      <groupId>org.jcuda</groupId>
+      <artifactId>jcuda</artifactId>
+      <version>11.2.0</version>
+    </dependency>
+    <dependency>
+      <groupId>org.jcuda</groupId>
+      <artifactId>jcublas</artifactId>
+      <version>11.2.0</version>
+    </dependency>
   </dependencies>
 </project>

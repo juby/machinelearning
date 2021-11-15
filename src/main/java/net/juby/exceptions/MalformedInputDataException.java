@@ -1,9 +1,9 @@
 package net.juby.exceptions;
 
-import net.juby.neuralnet.Network;
+import net.juby.neuralnet.BasicNetwork;
 
 /**
- * Exception to be thrown when the input data to {@link Network Network}
+ * Exception to be thrown when the input data to {@link BasicNetwork BasicNetwork}
  * is not formatted correctly.
  */
 public class MalformedInputDataException extends RuntimeException {

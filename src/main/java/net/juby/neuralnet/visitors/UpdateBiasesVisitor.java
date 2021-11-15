@@ -1,11 +1,11 @@
 package net.juby.neuralnet.visitors;
 
-import net.juby.neuralnet.Network;
+import net.juby.neuralnet.BasicNetwork;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.RealVectorChangingVisitor;
 
 /**
- * Updates the {@link RealVector} of weights in a {@link Network}.
+ * Updates the {@link RealVector} of weights in a {@link BasicNetwork}.
  */
 public class UpdateBiasesVisitor implements RealVectorChangingVisitor {
     private final double eta;

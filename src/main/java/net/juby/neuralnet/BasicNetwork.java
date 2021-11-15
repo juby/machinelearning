@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit;
  * @version 2.0 7/13/2021
  *
  */
-public class Network {
+public class BasicNetwork{
     private final int[] layerSizes;
     private final int numberOfLayers;
     private final RealVector[] biases;
@@ -33,7 +33,7 @@ public class Network {
      * @param layerSizes array of the number of neurons in each layer
      * @param costFunction the {@link CostFunction} to be used
      */
-    private Network(int[] layerSizes, CostFunction costFunction){
+    public BasicNetwork(int[] layerSizes, CostFunction costFunction){
 
         //Set the number of layers and the size of each layer.
         this.layerSizes = layerSizes;
@@ -71,10 +71,10 @@ public class Network {
 
     /**
      * Trains and tests the neural network.
-     * @param args command line arguments (run "java Network -h" for details)
+     * @param args command line arguments (run "java BasicNetwork -h" for details)
      */
     public static void main(String[] args){
-        // Network variable setup and initialization with default values.
+        // BasicNetwork variable setup and initialization with default values.
         int[] values = new int[]{784, 30, 10};
         int epochs = 30;
         int miniBatchSize = 10;
@@ -105,7 +105,7 @@ public class Network {
             CommandLine line = parser.parse(commandLineOptions, args);
 
             if(line.hasOption("h")){
-                help.printHelp("java Network", getCommandLineOptions(), true);
+                help.printHelp("java BasicNetwork", getCommandLineOptions(), true);
                 System.exit(0);
             }
             if(line.hasOption("e")){
@@ -142,12 +142,12 @@ public class Network {
         }catch (ParseException | NumberFormatException e){
             System.err.println(e.getClass().getSimpleName());
             System.err.println(e.getMessage());
-            help.printHelp("java Network", getCommandLineOptions(), true);
+            help.printHelp("java BasicNetwork", getCommandLineOptions(), true);
             System.exit(1);
         }
 
         // Generate the neural network.
-        Network net = new Network(values, costFunction);
+        BasicNetwork net = new BasicNetwork(values, costFunction);
 
         // Extract the MNIST data.
         trainingLabels = MnistReader.getLabels(trainingLabelsFileLocation);
