@@ -1,6 +1,5 @@
 package net.juby.neuralnet;
 
-import jcuda.jcublas.*;
 import net.juby.neuralnet.mnist.MnistReader;
 import org.apache.commons.lang3.time.StopWatch;
 import java.util.Arrays;
@@ -27,8 +26,8 @@ import java.util.concurrent.TimeUnit;
 public class CudaNetwork {
     private final int[] layerSizes;
     private final int numberOfLayers;
-    private final double[][] biases;
-    private final double[][][] weights;
+    private final float[][] biases;
+    private final float[][][] weights;
 
     /**
      * Constructs a new CudaNetwork
@@ -39,8 +38,8 @@ public class CudaNetwork {
         //Set the number of layers and the size of each layer.
         this.layerSizes = layerSizes;
         this.numberOfLayers = layerSizes.length;
-        this.biases = new double[this.numberOfLayers - 1][];
-        this.weights = new double[this.numberOfLayers - 1][][];
+        this.biases = new float[this.numberOfLayers - 1][];
+        this.weights = new float[this.numberOfLayers - 1][][];
         Random rand = new Random(System.currentTimeMillis());
 
         // Initialize the weights and biases.
@@ -49,9 +48,9 @@ public class CudaNetwork {
         // biases[i] contains the biases for the (i+2)th layer.
         for(int i = 0; i < biases.length; i++){
             int vectorLength = layerSizes[i + 1];
-            biases[i] = new double[vectorLength];
+            biases[i] = new float[vectorLength];
             for(int j = 0; j < vectorLength; j++){
-                biases[i][j] = rand.nextGaussian();
+                biases[i][j] = (float) rand.nextGaussian();
             }
         }
         // Create the weights matrices and initialize with random values.
@@ -60,10 +59,10 @@ public class CudaNetwork {
         for(int i = 0; i < weights.length; i++){
             int cols = layerSizes[i];
             int rows = layerSizes[i + 1];
-            weights[i] = new double[rows][cols];
+            weights[i] = new float[rows][cols];
             for(int j = 0; j < rows; j++){
                 for(int k = 0; k < cols; k++){
-                    weights[i][j][k] = rand.nextGaussian();
+                    weights[i][j][k] = (float) rand.nextGaussian();
                 }
             }
         }
@@ -74,7 +73,7 @@ public class CudaNetwork {
         int[] values = new int[]{784, 30, 10};
         int epochs = 30;
         int miniBatchSize = 10;
-        double eta = 3.0;
+        float eta = 3.0F;
 
         String dataFolder = "C:\\Users\\jubyd\\Projects\\machinelearning\\";
         String trainingLabelsFileLocation = dataFolder + "mnist_data\\train-labels.idx1-ubyte";
@@ -89,7 +88,7 @@ public class CudaNetwork {
         List<int[][]> testData;
         StopWatch stopWatch = new StopWatch();
         CudaNetwork network = new CudaNetwork(values);
-        double[][] trainingMatrix, testMatrix;
+        float[][] trainingMatrix, testMatrix;
 
         // Extract the MNIST data.
         trainingLabels = MnistReader.getLabels(trainingLabelsFileLocation);
@@ -98,8 +97,8 @@ public class CudaNetwork {
         testData = MnistReader.getImages(testDataFileLocation);
 
         // Create the matrices to hold the converted data
-        trainingMatrix = new double[trainingData.size()][trainingData.get(0).length * trainingData.get(0)[0].length];
-        testMatrix = new double[testData.size()][testData.get(0).length * testData.get(0)[0].length];
+        trainingMatrix = new float[trainingData.size()][trainingData.get(0).length * trainingData.get(0)[0].length];
+        testMatrix = new float[testData.size()][testData.get(0).length * testData.get(0)[0].length];
 
         convertData(trainingData, testData, trainingMatrix, testMatrix);
 
@@ -112,7 +111,7 @@ public class CudaNetwork {
     }
 
     /**
-     * Converts 2D int matrices into 1D arrays of doubles normalized to be between
+     * Converts 2D int matrices into 1D arrays of floats normalized to be between
      * 0 and 1. Those arrays are then assembled into a single matrix each for
      * testing and training data, where each row represents one image.
      * @param trainingData training data extracted by MnistReader
@@ -121,8 +120,8 @@ public class CudaNetwork {
      * @param testMatrix collected matrix of all testing examples
      */
     private static void convertData(List<int[][]> trainingData, List<int[][]> testData,
-                                    double[][] trainingMatrix, double[][] testMatrix){
-        // Flatten training image data, normalize, and convert to double values.
+                                    float[][] trainingMatrix, float[][] testMatrix){
+        // Flatten training image data, normalize, and convert to float values.
         for (int i = 0; i < trainingData.size(); i++) {
             int[][] tempArray = trainingData.get(i);
             int rows = tempArray.length;
@@ -130,12 +129,12 @@ public class CudaNetwork {
 
             for (int j = 0; j < rows; j++) {
                 for (int k = 0; k < cols; k++) {
-                    trainingMatrix[i][j * cols + k] = tempArray[j][k] / 255.0;
+                    trainingMatrix[i][j * cols + k] = (float) (tempArray[j][k] / 255.0);
                 }
             }
         }
 
-        // Flatten test image data, normalize, and convert to double values.
+        // Flatten test image data, normalize, and convert to float values.
         for (int l = 0; l < testData.size(); l++) {
             int[][] tempArray = testData.get(l);
             int rows = tempArray.length;
@@ -143,13 +142,13 @@ public class CudaNetwork {
 
             for (int m = 0; m < rows; m++) {
                 for (int n = 0; n < cols; n++) {
-                    testMatrix[l][m * cols + n] = tempArray[m][n] / 255.0;
+                    testMatrix[l][m * cols + n] = (float) (tempArray[m][n] / 255.0);
                 }
             }
         }
     }
 
-    private double[] feedForward(double[] input){
+    private float[] feedForward(float[] input){
         //TODO feedForward
         return input;
     }
@@ -165,9 +164,9 @@ public class CudaNetwork {
      * @param miniBatchSize number of examples to train between updates
      * @param eta learning rate for the network
      */
-    private void stochasticGradientDescent(int[] trainingLabels, double[][] trainingMatrix,
-                                           int[] testLabels, double[][] testMatrix,
-                                           int epochs, int miniBatchSize, double eta){
+    private void stochasticGradientDescent(int[] trainingLabels, float[][] trainingMatrix,
+                                           int[] testLabels, float[][] testMatrix,
+                                           int epochs, int miniBatchSize, float eta){
         // Local variable setup.
         int miniBatchCount = trainingMatrix.length/miniBatchSize;
 
@@ -187,30 +186,30 @@ public class CudaNetwork {
         }
     }
 
-    private int evaluate(double[][] testMatrix, int[] testLabels){
+    private int evaluate(float[][] testMatrix, int[] testLabels){
         //TODO: evaluate
         return 0;
     }
 
-    private void updateMiniBatch(double[][] batch, int[] labels, double eta){
+    private void updateMiniBatch(float[][] batch, int[] labels, float eta){
         // Create and initialize variables to hold changes for the biases and weights.
-        double[][] nabla_b = new double[biases.length][];
-        double[][] delta_nabla_b = new double[biases.length][];
-        double[][][] nabla_w = new double[weights.length][][];
-        double[][][] delta_nabla_w = new double[weights.length][][];
+        float[][] nabla_b = new float[biases.length][];
+        float[][] delta_nabla_b = new float[biases.length][];
+        float[][][] nabla_w = new float[weights.length][][];
+        float[][][] delta_nabla_w = new float[weights.length][][];
         for(int p = 0; p < biases.length; p++){
-            nabla_b[p] = new double[biases[p].length];
-            delta_nabla_b[p] = new double[biases[p].length];
-            Arrays.fill(nabla_b[p], 0.0);
+            nabla_b[p] = new float[biases[p].length];
+            delta_nabla_b[p] = new float[biases[p].length];
+            Arrays.fill(nabla_b[p], 0.0F);
         }
         for(int q = 0; q < weights.length; q++){
-            nabla_w[q] = new double[weights[q].length][];
-            delta_nabla_w[q] = new double[weights[q].length][];
+            nabla_w[q] = new float[weights[q].length][];
+            delta_nabla_w[q] = new float[weights[q].length][];
 
             for(int r = 0; r < weights[q].length; r++){
-                nabla_w[q][r] = new double[weights[q][r].length];
-                delta_nabla_w[q][r] = new double[weights[q][r].length];
-                Arrays.fill(nabla_w[q][r], 0.0);
+                nabla_w[q][r] = new float[weights[q][r].length];
+                delta_nabla_w[q][r] = new float[weights[q][r].length];
+                Arrays.fill(nabla_w[q][r], 0.0F);
             }
         }
 
@@ -218,11 +217,11 @@ public class CudaNetwork {
         for(int s = 0; s < batch.length; s++){
             // Reset the deltas
             for(int t = 0; t < biases.length; t++){
-                Arrays.fill(delta_nabla_b[t], 0.0);
+                Arrays.fill(delta_nabla_b[t], 0.0F);
             }
             for(int u = 0; u < weights.length; u++){
                 for(int v = 0; v < weights[u].length; v++){
-                    Arrays.fill(delta_nabla_w[u][v], 0.0);
+                    Arrays.fill(delta_nabla_w[u][v], 0.0F);
                 }
             }
 
@@ -234,9 +233,9 @@ public class CudaNetwork {
         // TODO: Write CUDA code for updating weights and biases from the nabla_* matrices
     }
 
-    private void backpropagation(double[][] delta_nabla_b,
-                                 double[][][] delta_nabla_w,
-                                 double[] trainingItem,
+    private void backpropagation(float[][] delta_nabla_b,
+                                 float[][][] delta_nabla_w,
+                                 float[] trainingItem,
                                  int trainingLabel){
         //TODO: backpropagation
     }
