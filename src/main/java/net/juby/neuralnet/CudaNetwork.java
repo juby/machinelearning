@@ -155,6 +155,17 @@ public class CudaNetwork {
         return input;
     }
 
+    /**
+     * Trains the neural network, then tests it.
+     *
+     * @param trainingLabels the correct result for each training example
+     * @param trainingMatrix matrix of all training example data
+     * @param testLabels the correct result for each testing example
+     * @param testMatrix matrix of all testing example data
+     * @param epochs number of times the network is to be trained and tested
+     * @param miniBatchSize number of examples to train between updates
+     * @param eta learning rate for the network
+     */
     private void stochasticGradientDescent(int[] trainingLabels, double[][] trainingMatrix,
                                            int[] testLabels, double[][] testMatrix,
                                            int epochs, int miniBatchSize, double eta){
@@ -184,11 +195,47 @@ public class CudaNetwork {
 
     private void updateMiniBatch(double[][] batch, int[] labels, double eta){
         //TODO: updateMiniBatch
+
+        // Create and initialize variables to hold changes for the biases and weights.
+        double[][] nabla_b = new double[biases.length][];
+        double[][] delta_nabla_b = new double[biases.length][];
+        double[][][] nabla_w = new double[weights.length][][];
+        double[][][] delta_nabla_w = new double[weights.length][][];
+        for(int p = 0; p < biases.length; p++){
+            nabla_b[p] = new double[biases[p].length];
+            delta_nabla_b[p] = new double[biases[p].length];
+            Arrays.fill(nabla_b[p], 0.0);
+        }
+        for(int q = 0; q < weights.length; q++){
+            for(int r = 0; r < weights[q].length; r++){
+                nabla_w[q][r] = new double[weights[q][r].length];
+                delta_nabla_w[q][r] = new double[weights[q][r].length];
+                Arrays.fill(nabla_w[q][r], 0.0);
+            }
+        }
+
+        // Run the backpropagation algorithm for each example in the batch
+        for(int s = 0; s < batch.length; s++){
+            // Reset the deltas
+            for(int t = 0; t < biases.length; t++){
+                Arrays.fill(delta_nabla_b[t], 0.0);
+            }
+            for(int u = 0; u < weights.length; u++){
+                for(int v = 0; v < weights[u].length; v++){
+                    Arrays.fill(delta_nabla_w[u][v], 0.0);
+                }
+            }
+
+            backpropagation(delta_nabla_b, delta_nabla_w, batch[s], labels[s]);
+
+            // TODO: Write CUDA code for updating the nabla_* matrices from the delta_nabla_* matrices
+        }
     }
 
     private void backpropagation(double[][] delta_nabla_b,
                                  double[][][] delta_nabla_w,
-                                 double[] trainingItem){
+                                 double[] trainingItem,
+                                 int trainingLabel){
         //TODO: backpropagation
     }
 }
