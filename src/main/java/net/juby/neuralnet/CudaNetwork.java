@@ -5,6 +5,8 @@ import net.juby.neuralnet.mnist.MnistReader;
 import org.apache.commons.lang3.time.StopWatch;
 import org.apache.commons.math3.linear.RealMatrix;
 
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -155,22 +157,32 @@ public class CudaNetwork {
 
     private void stochasticGradientDescent(int[] trainingLabels, double[][] trainingMatrix,
                                            int[] testLabels, double[][] testMatrix,
-                                           int epochs,
-                                           int miniBatchSize,
-                                           double eta){
-        //TODO: SGD
+                                           int epochs, int miniBatchSize, double eta){
         // Local variable setup.
-        int nTest = testMatrix.length;
-        int miniBatchCount = trainingMatrix[0].length/miniBatchSize;
-        RealMatrix[] miniBatches = new RealMatrix[miniBatchCount];
+        int miniBatchCount = trainingMatrix.length/miniBatchSize;
+
+        // Run all training examples for the specified number of epochs.
+        for(int o = 0; o < epochs; o++){
+            // Shuffle the examples.
+            Collections.shuffle(Arrays.asList(trainingMatrix));
+
+            for(int p = 0; p < miniBatchCount; p++){
+                updateMiniBatch(Arrays.copyOfRange(trainingMatrix, p * miniBatchSize,
+                        (p + 1) * miniBatchSize - 1), trainingLabels, eta);
+            }
+
+            //Output progress to command line.
+            System.out.println("Epoch " + o + ": " + evaluate(testMatrix, testLabels) +
+                    "/" + testMatrix.length);
+        }
     }
 
-    private int evaluate(double[][] testData){
+    private int evaluate(double[][] testMatrix, int[] testLabels){
         //TODO: evaluate
         return 0;
     }
 
-    private void updateMiniBatch(double[][] batch, double eta){
+    private void updateMiniBatch(double[][] batch, int[] labels, double eta){
         //TODO: updateMiniBatch
     }
 
