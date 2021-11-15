@@ -3,6 +3,7 @@ package net.juby.neuralnet;
 import jcuda.*;
 import net.juby.neuralnet.mnist.MnistReader;
 import org.apache.commons.lang3.time.StopWatch;
+import org.apache.commons.math3.linear.RealMatrix;
 
 import java.util.List;
 import java.util.Random;
@@ -106,25 +107,42 @@ public class CudaNetwork {
                 stopWatch.getTime(TimeUnit.SECONDS) + " seconds.");
     }
 
+    /**
+     * Converts 2D int matrices into 1D arrays of doubles normalized to be between
+     * 0 and 1. Those arrays are then assembled into a single matrix each for
+     * testing and training data, where each row represents one image.
+     * @param trainingData training data extracted by MnistReader
+     * @param testData testing data extracted by MnistReader
+     * @param trainingMatrix collected matrix of all training examples
+     * @param testMatrix collected matrix of all testing examples
+     */
     private static void convertData(List<int[][]> trainingData, List<int[][]> testData,
                                     double[][] trainingMatrix, double[][] testMatrix){
         trainingMatrix = new double[trainingData.get(0).length][trainingData.get(0)[0].length];
         testMatrix = new double[testData.get(0).length][testData.get(0)[0].length];
 
         // Flatten training image data, normalize, and convert to double values.
-        for (int[][] tempArray : trainingData) {
-            for (int j = 0; j < tempArray.length; j++) {
-                for (int k = 0; k < tempArray[j].length; k++) {
-                    trainingMatrix[j][k] = tempArray[j][k] / 255.0;
+        for (int i = 0; i < trainingData.size(); i++) {
+            int[][] tempArray = trainingData.get(i);
+            int rows = tempArray.length;
+            int cols = tempArray[0].length;
+
+            for (int j = 0; j < rows; j++) {
+                for (int k = 0; k < cols; k++) {
+                    trainingMatrix[i][j * cols + k] = tempArray[j][k] / 255.0;
                 }
             }
         }
 
         // Flatten test image data, normalize, and convert to double values.
-        for (int[][] tempArray : testData) {
-            for (int m = 0; m < tempArray.length; m++) {
-                for (int n = 0; n < tempArray[m].length; n++) {
-                    testMatrix[m][n] = tempArray[m][n] / 255.0;
+        for (int l = 0; l < testData.size(); l++) {
+            int[][] tempArray = testData.get(l);
+            int rows = tempArray.length;
+            int cols = tempArray[0].length;
+
+            for (int m = 0; m < rows; m++) {
+                for (int n = 0; n < cols; n++) {
+                    testMatrix[l][m * cols + n] = tempArray[m][n] / 255.0;
                 }
             }
         }
@@ -141,6 +159,10 @@ public class CudaNetwork {
                                            int miniBatchSize,
                                            double eta){
         //TODO: SGD
+        // Local variable setup.
+        int nTest = testMatrix.length;
+        int miniBatchCount = trainingMatrix[0].length/miniBatchSize;
+        RealMatrix[] miniBatches = new RealMatrix[miniBatchCount];
     }
 
     private int evaluate(double[][] testData){
