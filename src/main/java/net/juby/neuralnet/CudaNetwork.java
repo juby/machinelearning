@@ -1,10 +1,8 @@
 package net.juby.neuralnet;
 
-import jcuda.*;
+import jcuda.jcublas.*;
 import net.juby.neuralnet.mnist.MnistReader;
 import org.apache.commons.lang3.time.StopWatch;
-import org.apache.commons.math3.linear.RealMatrix;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -91,13 +89,17 @@ public class CudaNetwork {
         List<int[][]> testData;
         StopWatch stopWatch = new StopWatch();
         CudaNetwork network = new CudaNetwork(values);
-        double[][] trainingMatrix = null, testMatrix = null;
+        double[][] trainingMatrix, testMatrix;
 
         // Extract the MNIST data.
         trainingLabels = MnistReader.getLabels(trainingLabelsFileLocation);
         trainingData = MnistReader.getImages(trainingDataFileLocation);
         testLabels = MnistReader.getLabels(testLabelsFileLocation);
         testData = MnistReader.getImages(testDataFileLocation);
+
+        // Create the matrices to hold the converted data
+        trainingMatrix = new double[trainingData.size()][trainingData.get(0).length * trainingData.get(0)[0].length];
+        testMatrix = new double[testData.size()][testData.get(0).length * testData.get(0)[0].length];
 
         convertData(trainingData, testData, trainingMatrix, testMatrix);
 
@@ -120,9 +122,6 @@ public class CudaNetwork {
      */
     private static void convertData(List<int[][]> trainingData, List<int[][]> testData,
                                     double[][] trainingMatrix, double[][] testMatrix){
-        trainingMatrix = new double[trainingData.get(0).length][trainingData.get(0)[0].length];
-        testMatrix = new double[testData.get(0).length][testData.get(0)[0].length];
-
         // Flatten training image data, normalize, and convert to double values.
         for (int i = 0; i < trainingData.size(); i++) {
             int[][] tempArray = trainingData.get(i);
@@ -194,8 +193,6 @@ public class CudaNetwork {
     }
 
     private void updateMiniBatch(double[][] batch, int[] labels, double eta){
-        //TODO: updateMiniBatch
-
         // Create and initialize variables to hold changes for the biases and weights.
         double[][] nabla_b = new double[biases.length][];
         double[][] delta_nabla_b = new double[biases.length][];
@@ -207,6 +204,9 @@ public class CudaNetwork {
             Arrays.fill(nabla_b[p], 0.0);
         }
         for(int q = 0; q < weights.length; q++){
+            nabla_w[q] = new double[weights[q].length][];
+            delta_nabla_w[q] = new double[weights[q].length][];
+
             for(int r = 0; r < weights[q].length; r++){
                 nabla_w[q][r] = new double[weights[q][r].length];
                 delta_nabla_w[q][r] = new double[weights[q][r].length];
@@ -230,6 +230,8 @@ public class CudaNetwork {
 
             // TODO: Write CUDA code for updating the nabla_* matrices from the delta_nabla_* matrices
         }
+
+        // TODO: Write CUDA code for updating weights and biases from the nabla_* matrices
     }
 
     private void backpropagation(double[][] delta_nabla_b,
